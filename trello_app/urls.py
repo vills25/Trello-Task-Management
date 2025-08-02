@@ -18,8 +18,18 @@ urlpatterns = [
     path('delete_board/', delete_board),
     path('add_member_to_board/', add_member_to_board),
     path('remove_member_from_board/', remove_member_from_board),
+    path('view_board_members/', view_board_members),
+    path('get_my_board/', get_my_board),
+    path('search_boards/', search_boards),
 
     # Task Urls
-    
-
+    path('task_get/', task_get),
+    path('create_task/', create_task),
+    path('update_task/', update_task),
+    path('delete_task/', delete_task),
+    path('mark_task_complete/', mark_task_complete),
+    path('add_media_files/', add_media_files),
+    path('delete_task_mediafile/', delete_task_mediafile),
+    path('replace_task_mediafiles/', replace_task_mediafiles),
+    path('search_tasks/', search_tasks),
 ]    

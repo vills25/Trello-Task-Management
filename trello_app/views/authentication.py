@@ -53,10 +53,10 @@ def login_user(request):
     user = authenticate(username=username, password=password)
 
     if not user:
-        return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response({"error": "Invalid credentials or user no exists"}, status=status.HTTP_401_UNAUTHORIZED)
 
     user_data = {
-        "user_id": user.user_id,                # type: ignore
+        "user_id": user.user_id,           # type: ignore
         "username": user.username,
         "email": user.email,
         "full_name": user.full_name,       # type: ignore

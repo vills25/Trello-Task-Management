@@ -1,0 +1,152 @@
+HR Questions
+
+1). Introduce yourself 
+     
+    Hello, my name is vishal sohaliya. I hold a degree in B.Com and have completed training in backend development while actively engaging with frontend Development at Tops Technologies, Surat. My technical skills include proficiency in Python programming language, MySQL database management, and working knowledge of the Django framework. I am dedicated to continuously improving my skills and staying updated with the latest advancements in web development.
+
+........................................................................................................................................................................................
+
+2). Why did you choose this language? 
+
+    I chose this language because of its simplicity, efficiency, and widespread adoption in the industry. 
+    Its versatility allows me to easily and precisely develop scalable solutions across various domains.
+
+........................................................................................................................................................................................
+
+3). Explain your project. 
+ 
+    I contributed to "Medi-Center," a project enhancing the online presence of a local medical laboratory. My role focused on backend development using Python (3.12.0) with Django Rest Framework API and SQLite3. The front end utilized HTML5, CSS3, and JavaScript, leveraging templates from Colorlib.com. Key features included performance optimization and secure authentication, making it efficient and user-friendly.
+
+........................................................................................................................................................................................
+
+4). What do you know about our company?
+
+........................................................................................................................................................................................
+
+5). What are your strengths?
+
+    I can process and generate responses quickly, which can save time and improve productivity in tasks such as research or decision-making processes.
+
+........................................................................................................................................................................................
+
+6). Specify your weakness? 
+
+    For me, Multitasking increases the likelihood of making mistakes or overlooking important details, especially in tasks that require careful attention or complex problem-solving.
+
+........................................................................................................................................................................................
+
+7). What motivates you to do a good job? 
+
+    I'm motivated by the sense of fulfillment that comes with delivering quality results and knowing that I've contributed positively to the task at hand. Helping others succeed and achieving collective goals drives me to do my best every day.
+
+........................................................................................................................................................................................
+
+8). What are your salary expectations? 
+
+    I'm flexible regarding salary and open to discussing compensation based on the responsibilities and opportunities offered by the role. Could you please provide more information about the salary range for this position, so we can discuss further and ensure mutual satisfaction?
+
+........................................................................................................................................................................................
+
+9). Tell me about your achievements.
+ 
+........................................................................................................................................................................................
+
+10). Where else have you applied?
+
+........................................................................................................................................................................................
+
+11). If given a choice would you like to work in a team or standalone?
+
+     If given a choice, I would prefer to work in a team environment. Collaboration within a team allows for diverse perspectives, pooling of expertise, and the opportunity to leverage each team member's strengths to achieve common goals efficiently. 
+
+........................................................................................................................................................................................
+
+12). What are your expectations from the company? 
+
+     My expectations from the company include a supportive work environment, growth opportunities, and fair compensation aligned with industry standards. Specifically, I hope to work for a company that values employee well-being, encourages open communication, and fosters a culture of continuous learning and development.
+
+........................................................................................................................................................................................
+
+13). What makes you angry?
+
+     Instances of unfairness, lack of transparency, or when decisions are made without considering all perspectives can be sources of frustration. Additionally, encountering situations where progress is hindered due to inefficiency or lack of communication can be challenging.
+
+........................................................................................................................................................................................
+
+14). Whom do you consider as your role model? 
+
+    I consider Chanakya a role model due to his unparalleled ability to navigate complex situations integrity, intellect, and foresight. His emphasis on ethical conduct, strategic planning, and dedication to the greater good serve as an inspiration in both personal and professional endeavors.
+
+........................................................................................................................................................................................
+
+15). Tell me about your hobbies. 
+
+     I have a strong interest in learning new technologies and participating in outdoor sports activities. When it comes to technology, I enjoy staying updated on the latest advancements in fields like artificial intelligence, blockchain, and renewable energy. Both learning about technology and engaging in outdoor sports enrich my life in unique ways, providing opportunities for growth, exploration, and fulfillment.
+
+........................................................................................................................................................................................
+
+16). Where do you see yourself five years down the line? 
+
+     In the next five years, I envision myself in a position where I have significantly contributed to the growth and success of the company. I aspire to take on more responsibilities and challenges, leveraging my skills and expertise to drive meaningful impact within the organization.
+
+........................................................................................................................................................................................
+
+17). Are you comfortable extending your work timings and work over weekends? 
+
+     However, I understand that certain projects or circumstances may require additional dedication and flexibility. If there's a need to extend work timings or work over weekends to support the company's objectives and meet critical deadlines, I am more than willing to do so. My commitment to the success of the team and the organization drives me to adapt and contribute whenever necessary.
+
+........................................................................................................................................................................................
+
+18). How long would you work for us if hired?
+
+     I am genuinely interested in contributing to the success and growth of this company in the long term. As long as I find myself challenged, engaged, and able to make meaningful contributions to the team and the organization, I see myself continuing to work here.
+
+........................................................................................................................................................................................
+
+19). Can you work under pressure or deadlines?
+
+          Amidst the pressure and deadlines, I am becoming better at completing my work on time. This gives me an opportunity to showcase my commitment and time management abilities.
+
+........................................................................................................................................................................................
+
+20). What is the biggest mistake you ever made?
+
+          Occasionally, I've overlooked minor details in the past. To address this, I've become more diligent in my review process, ensuring all aspects are thoroughly checked before completion.
+........................................................................................................................................................................................
+
+21). What was the toughest decision you ever had to make?
+
+          The toughest decision I've faced was transitioning to a new career path. It required careful consideration of my goals, strengths, and passions.
+........................................................................................................................................................................................
+
+22). What was the biggest failure you had to face? 
+
+     My biggest failure taught me the importance of thorough planning and adaptability. It's helped me approach challenges with resilience and achieve greater success in subsequent endeavors.
+
+........................................................................................................................................................................................
+
+23). Why should I hire you? 
+     
+     You should hire me because my skills closely match the requirements of the position outlined in the job description. I am confident in my ability to deliver results and contribute to the success of the company.
+
+........................................................................................................................................................................................
+
+24). Would you be ready to relocate if hired? 
+
+     Yes, I am absolutely open to relocating for the right opportunity. I am excited about the prospect of exploring new environments and embracing new challenges that come with relocation. I am fully committed to making a smooth transition and contributing effectively to the team and the company's objectives in the new location.
+........................................................................................................................................................................................
+
+25). Do you know anyone who works for us? 
+
+     No, I don't currently know anyone who works for your company. However, I'm eager to connect with and learn from the talented individuals who make up your team.
+ 
+
+
+
+
+
+
+
+
+
+
