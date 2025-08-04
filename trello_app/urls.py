@@ -11,6 +11,8 @@ urlpatterns = [
     path('reset_password/', reset_password),
     path('update_profile/', update_profile),
     path('delete_profile/', delete_profile),
+    path('view_all_users/', view_all_users),
+    path('view_my_profile/', view_my_profile),
     
     # Board Urls
     path('create_board/', create_board),

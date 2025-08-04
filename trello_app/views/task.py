@@ -67,7 +67,11 @@ def task_get(request):
     except TaskCard.DoesNotExist:
         return Response({"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
 
-    # serializer = TaskCardSerializer(task)
+    user = request.user
+   
+    if task.created_by != user:
+        return Response({"error": "You can not view otheer tasks."}, status=status.HTTP_403_FORBIDDEN)
+
     return Response({
                      "Task_title": task.title,
                      "Task_Board": task.board.title,

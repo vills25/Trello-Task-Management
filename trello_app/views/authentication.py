@@ -9,6 +9,7 @@ from datetime import timedelta
 from django.contrib.auth import authenticate
 from django.core.mail import send_mail
 from trello_app.models import *
+from trello_app.serializers import UserSerializer, UserDetailSerializer
 import random
 
 # Register User
@@ -18,7 +19,7 @@ def register_user(request):
     data = request.data
 
     if User.objects.filter(username=data.get('username')).exists():
-        return Response({"error": "Username already taken."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "Username already Exist."}, status=status.HTTP_400_BAD_REQUEST)
 
     if User.objects.filter(email=data.get('email')).exists():
         return Response({"error": "Email already registered."}, status=status.HTTP_400_BAD_REQUEST)
@@ -70,6 +71,8 @@ def login_user(request):
             "user": user_data,
         })
     return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+
+###########################################################################
 
 #Generate OTP
 def generate_otp():
@@ -123,7 +126,7 @@ def reset_password(request):
  
         return Response({"Invalid email"}, status= status.HTTP_404_NOT_FOUND)
 
-#  user.profile_image = request.FILES.get('profile_pic', user.profile_image)
+#############################################################################
 
 # Update Profile
 @api_view(['PUT'])
@@ -131,7 +134,7 @@ def reset_password(request):
 def update_profile(request):
     try:    
         get_user_id = request.data.get('user_id')
-        user_get = User.objects.get(get_user_id=get_user_id)
+        user_get = User.objects.get(user_id=get_user_id)
         data = request.data
         with transaction.atomic():
             if 'username' in data:
@@ -159,6 +162,8 @@ def update_profile(request):
                     "message": "Buyer updated successfully",
                     "buyer_id": user_get.user_id,
                     "username": user_get.username,
+                    "full_name": user_get.full_name,
+                    "profile_image": user_get.profile_image.url if user_get.profile_image else None,
                     "email": user_get.email
                 }, status=status.HTTP_200_OK)
 
@@ -181,3 +186,48 @@ def delete_profile(request):
         return Response({"message": "User deleted"}, status=status.HTTP_200_OK)
     except User.DoesNotExist:
         return Response({"error": "User not found"}, status= status.HTTP_404_NOT_FOUND)
+
+# View All Users
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def view_all_users(request):
+    try:
+        if not request.user.is_superuser:
+            return Response({"error": "You do not have permission to view all users"}, status=status.HTTP_403_FORBIDDEN)
+
+        username = request.data.get('username', '')
+        email = request.data.get('email', '')
+        user_id = request.data.get('user_id', '')
+        full_name = request.data.get('full_name', '')
+
+        users = User.objects.all()
+        if username:
+            users = users.filter(username__icontains=username)
+        if email:
+            users = users.filter(email__icontains=email)
+        if user_id:
+            users = users.filter(user_id=user_id)
+        if full_name:
+            users = users.filter(full_name__icontains=full_name)
+        
+        if not users.exists():
+            return Response({"message": "No users found matching the results"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = UserSerializer(users, many=True)
+        return Response({"Users Data": serializer.data}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+# view  my profile
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def view_my_profile(request):
+    user = request.user
+    user_data = {
+        "user_id": user.user_id,
+        "username": user.username,
+        "email": user.email,
+        "full_name": user.full_name,
+        "profile_image": user.profile_image.url if user.profile_image else None
+    }
+    return Response({"User Data": user_data}, status=status.HTTP_200_OK)
