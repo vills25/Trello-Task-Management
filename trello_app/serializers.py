@@ -25,6 +25,7 @@ class BoardSerializer(serializers.ModelSerializer):
         fields = ['board_id', 'title', 'description', 'visibility', 'created_by', 'members', 'created_at', 'updated_at', 'updated_by']
 
 class TaskCardSerializer(serializers.ModelSerializer):
+    assigned_to = UserDetailSerializer()
     class Meta:
         model = TaskCard
         fields = ['task_id', 'board', 'title','description','is_completed','due_date','created_at', 'created_by','updated_at', 'updated_by', 'assigned_to']

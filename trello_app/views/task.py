@@ -45,8 +45,18 @@ def task_get(request):
     except TaskCard.DoesNotExist:
         return Response({"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
 
-    serializer = TaskCardSerializer(task)
-    return Response({"task data": serializer.data}, status=status.HTTP_200_OK)
+    # serializer = TaskCardSerializer(task)
+    return Response({
+                     "Task_title": task.title,
+                     "Task_Board": task.board.title,
+                     "Description": task.description,
+                     "Task_Status": task.is_completed,
+                     "Assigned_to":task.assigned_to.full_name if task.assigned_to else "Unassigned",
+                     "Created_by": task.created_by.full_name,
+                     "Created_at": task.created_at,
+                     "Updated_by": task.updated_by.full_name if task.updated_by else "None",  # type: ignore    
+                     "Updated_at": task.updated_at,
+                     }, status=status.HTTP_200_OK)
 
 
 # Create Task Card
