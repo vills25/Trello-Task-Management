@@ -11,26 +11,48 @@ from trello_app.serializers import TaskCardSerializer, TaskAttachmentSerializer,
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def search_tasks(request):
+    try:    
+        data = request.data
+        
+        task_id = data.get('task_id')
+        board = data.get('board','')
+        description = data.get('description','')
+        due_date= data.get('due_date','')
+        created_by= data.get('created_by','')
+        is_completed= data.get('is_completed','')
+        updated_by= data.get('updated_by','')
 
-    search_task = request.data.get("Search tasks", "")
+        queryset = Board.objects.filter()
 
-    try:
-        tasks = TaskCard.objects.filter(title__icontains=search_task, board__members=request.user)
-        data = []
+        if task_id:
+                queryset = queryset.filter(pk=task_id)
 
-        for task in tasks:
-            data.append({
-                "board_id": task.board.board_id,
-                "board_title": task.board.title,
-                "task_id": task.task_id,
-                "title": task.title,
-                "is_completed": task.is_completed
-            })
-        return Response({"Task Data":data}, status=status.HTTP_200_OK)
+        if board:
+                queryset = queryset.filter(board__icontains=board)
+
+        if description:
+                queryset = queryset.filter(description__icontains=description)
+
+        if due_date:
+                queryset = queryset.filter(due_date__icontains=due_date)
+
+        if created_by:
+                queryset = queryset.filter(created_by__icontains=created_by)
+
+        if updated_by:
+                queryset = queryset.filter(updated_by__icontains=updated_by)
+
+        if is_completed:
+                queryset = queryset.filter(is_completed__icontains=is_completed)
+        
+        if not queryset.exists():
+                return Response({"message": "No matching Tasks found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = TaskCardSerializer(queryset, many=True)
+        return Response({"results": serializer.data}, status=status.HTTP_200_OK)
     
-    except TaskCard.DoesNotExist:
-        return Response({"Error": "Entered Task Card Doesn't Exist."}, status= status.HTTP_404_NOT_FOUND)
-
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 # View Task Cards
 @api_view(['GET'])
@@ -54,7 +76,7 @@ def task_get(request):
                      "Assigned_to":task.assigned_to.full_name if task.assigned_to else "Unassigned",
                      "Created_by": task.created_by.full_name,
                      "Created_at": task.created_at,
-                     "Updated_by": task.updated_by.full_name if task.updated_by else "None",  # type: ignore    
+                     "Updated_by": task.updated_by.full_name if task.updated_by else "None",
                      "Updated_at": task.updated_at,
                      }, status=status.HTTP_200_OK)
 

@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.db import transaction
 from trello_app.models import Board, User, TaskCard, TaskAttachment, TaskImage
+from trello_app.serializers import BoardSerializer
 
 # Create User Board
 @api_view(['POST'])
@@ -229,17 +230,62 @@ def view_board_members(request):
         return Response({"error": "Task Board not found"}, status=status.HTTP_404_NOT_FOUND)
 
 # User can search his Boards if he created more than one 
+# @api_view(['POST'])
+# @permission_classes([IsAuthenticated])
+# def search_boards(request):
+#     search_board = request.data.get("board_id", "")
+#     boards = Board.objects.filter(title__icontains=search_board, members=request.user)
+#     data = []
+#     for b in boards:
+#         data.append({
+#             "board_id": b.board_id,
+#             "title": b.title,
+#             "visibility": b.visibility
+#         })
+#     return Response(data, status=status.HTTP_200_OK)
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def search_boards(request):
-    search_board = request.data.get("board_id", "")
-    boards = Board.objects.filter(title__icontains=search_board, members=request.user)
-    data = []
-    for b in boards:
-        data.append({
-            "board_id": b.board_id,
-            "title": b.title,
-            "visibility": b.visibility
-        })
-    return Response(data, status=status.HTTP_200_OK)
+def search_boards(request):    
+    try:    
+        data = request.data
+        
+        board_id = data.get('board_id')
+        title = data.get('title','')
+        description = data.get('descriptionitle','')
+        visibility= data.get('visibility','')
+        created_by= data.get('created_by','')
+        updated_by= data.get('updated_by','')
+        members= data.get('members','')
 
+        queryset = Board.objects.filter()
+
+        if board_id:
+                queryset = queryset.filter(pk=board_id)
+
+        if title:
+                queryset = queryset.filter(title__icontains=title)
+
+        if description:
+                queryset = queryset.filter(description__icontains=description)
+
+        if visibility:
+                queryset = queryset.filter(visibility__icontains=visibility)
+
+        if created_by:
+                queryset = queryset.filter(created_by__icontains=created_by)
+
+        if updated_by:
+                queryset = queryset.filter(updated_by__icontains=updated_by)
+
+        if members:
+                queryset = queryset.filter(members__icontains=members)
+
+        if not queryset.exists():
+                return Response({"message": "No matching Boards found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = BoardSerializer(queryset, many=True)
+        return Response({"results": serializer.data}, status=status.HTTP_200_OK)
+    
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
