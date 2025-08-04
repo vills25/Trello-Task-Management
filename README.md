@@ -72,3 +72,18 @@
     }
 }
 ```
+
+## This is Task detail formate inside the Task Board
+```jason
+{
+    "Task_title": "First Task",
+    "Task_Board": "Vishal's Board",
+    "Description": "This is the First task Description",
+    "Task_Status": "doing",
+    "Assigned_to": "Vishal Patel",
+    "Created_by": "Vishal Patel",
+    "Created_at": "2025-08-02T06:57:04.660190Z",
+    "Updated_by": "Vishal Patel",
+    "Updated_at": "2025-08-02T06:57:04.660190Z"
+}
+```
