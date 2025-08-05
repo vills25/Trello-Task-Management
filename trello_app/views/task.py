@@ -5,7 +5,8 @@ from rest_framework import status
 from django.db import transaction
 from trello_app.models import User, Board,TaskCard, TaskAttachment, TaskImage
 from trello_app.serializers import TaskCardSerializer, TaskAttachmentSerializer, TaskImageSerializer
-
+from django.utils import timezone
+from datetime import datetime
 
 # Search Task Cards    
 @api_view(['GET'])
@@ -66,22 +67,23 @@ def task_get(request):
         task = TaskCard.objects.get(task_id=task_id)
     except TaskCard.DoesNotExist:
         return Response({"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
-
+    
     user = request.user
    
     if task.created_by != user:
         return Response({"error": "You can not view otheer tasks."}, status=status.HTTP_403_FORBIDDEN)
 
     return Response({
+                     "Task_id": task.task_id,
                      "Task_title": task.title,
                      "Task_Board": task.board.title,
                      "Description": task.description,
                      "Task_Status": task.is_completed,
                      "Assigned_to":task.assigned_to.full_name if task.assigned_to else "Unassigned",
                      "Created_by": task.created_by.full_name,
-                     "Created_at": task.created_at,
+                     "Created_at": task.created_at.strftime("%d-%m-%Y %H:%M:%S"),
                      "Updated_by": task.updated_by.full_name if task.updated_by else "None",
-                     "Updated_at": task.updated_at,
+                     "Updated_at": task.updated_at.strftime("%d-%m-%Y %H:%M:%S"),
                      }, status=status.HTTP_200_OK)
 
 
@@ -112,6 +114,12 @@ def create_task(request):
                 assigned_to_user = User.objects.get(user_id=assigned_to_id)
             except User.DoesNotExist:
                 return Response({"error": "Assigned user does not exist"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        valid_status = ["pending", "doing", "complated"]
+        is_completed = data.get("is_completed", "pending")
+
+        if is_completed not in valid_status:
+            return Response({"error": "Invalid task status."},status=status.HTTP_400_BAD_REQUEST)
 
         with transaction.atomic():
             task = TaskCard.objects.create(
@@ -119,7 +127,7 @@ def create_task(request):
                 title=data.get("title"),
                 description=data.get("description"),
                 due_date=data.get("due_date"),
-                is_completed=data.get("pending", "doing", "complated"),
+                is_completed=is_completed,
                 created_by=user,
                 assigned_to=assigned_to_user
             )
@@ -170,13 +178,16 @@ def update_task(request):
             if 'due_date' in data:
                 task.due_date = data['due_date']    
 
-            assigned_to = data["assigned_to"]
-            if assigned_to:
-                try:
-                    assigned_user_upd = User.objects.get(user_id=assigned_to)
-                    task.assigned_to = assigned_user_upd
-                except User.DoesNotExist:
-                    return Response({"error": "Assigned user not found"}, status=status.HTTP_404_NOT_FOUND)
+            if 'assigned_to' in data:
+                assigned_to = data["assigned_to"]
+                if assigned_to:
+                    try:
+                        assigned_user_upd = User.objects.get(user_id=assigned_to)
+                        task.assigned_to = assigned_user_upd
+                    except User.DoesNotExist:
+                        return Response({"error": "Assigned user not found"}, status=status.HTTP_404_NOT_FOUND)
+                else:
+                    task.assigned_to = None
 
             if "image" in request.FILES:
                 if task_image:
@@ -191,9 +202,10 @@ def update_task(request):
                     task_attachment.save()
                 else:
                     TaskAttachment.objects.create(task=task, file=request.FILES["attachment"])
-
+        
             task.save()
-            return Response({"message": "Task updated successfully", "Updated task Details":task}, status=status.HTTP_200_OK)
+            serializer = TaskCardSerializer(task)
+            return Response({"message": "Task updated successfully", "Updated task Details":serializer.data}, status=status.HTTP_200_OK)
 
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -224,7 +236,6 @@ def delete_task(request):
 @permission_classes([IsAuthenticated])
 def mark_task_complete(request):
 
-    # ask user to enter task id 
     task_id = request.data.get("task_id")
     if not task_id:
         return Response({"Task ID is Required"}, status=status.HTTP_400_BAD_REQUEST)
@@ -236,7 +247,7 @@ def mark_task_complete(request):
             if request.user not in task.board.members.all():
                 return Response({"error": "You can not change the status of task of others task."}, status=status.HTTP_403_FORBIDDEN)
             
-            task_status_update = request.data.get("pending", "doing", "complated")
+            task_status_update = request.data.get("status")
 
             if not task_status_update:
                 return Response({"error": "Task status is required"}, status=status.HTTP_400_BAD_REQUEST)
@@ -254,7 +265,7 @@ def mark_task_complete(request):
                 task.is_completed = task_status_update
 
             task.save()
-            return Response({"message": "Task completed"}, status= status.HTTP_200_OK)
+            return Response({"message": "Task status Updated"}, status= status.HTTP_200_OK)
         
     except TaskCard.DoesNotExist:
         return Response({"error": "Task not found"},status= status.HTTP_404_NOT_FOUND)

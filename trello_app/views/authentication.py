@@ -9,7 +9,7 @@ from datetime import timedelta
 from django.contrib.auth import authenticate
 from django.core.mail import send_mail
 from trello_app.models import *
-from trello_app.serializers import UserSerializer, UserDetailSerializer
+from trello_app.serializers import UserSerializer
 import random
 
 # Register User
@@ -72,6 +72,22 @@ def login_user(request):
         })
     return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
+
+# #Logout User
+# @api_view(['POST'])
+# @permission_classes([IsAuthenticated])
+# def logout_user(request):
+#     try:
+#         refresh_token = request.data.get("refresh_token")
+#         if not refresh_token:
+#             return Response({"error": "Refresh token required"}, status=status.HTTP_400_BAD_REQUEST)
+
+#         token = RefreshToken(refresh_token)
+#         token.blacklist()
+#         return Response({"message": "logged out successfully"}, status=status.HTTP_200_OK)
+#     except Exception as e:
+#         return Response({"error":str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 ###########################################################################
 
 #Generate OTP
@@ -80,8 +96,8 @@ def generate_otp():
 
 # Send Email
 def send_otp_email(user_email, otp):
-    subject = "TRELLO OTP for reset password"
-    message = f"Hello from TRELLO.\n This is OTP is for reset your password: {otp}"
+    subject = "TRELLO App OTP for reset password"
+    message = f"Hello from TRELLO Task Management App.\n This is OTP for reset your password: {otp}"
     from_email = 'vishalsohaliya25@gmail.com'
     recipient_list = [user_email]
     send_mail(subject, message, from_email, recipient_list)

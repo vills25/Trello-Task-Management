@@ -48,9 +48,9 @@ def get_my_board(request):
             "description": board.description,
             "visibility": board.visibility,
             "created_by":  board.created_by.full_name if board.created_by else "Unknown",
-            "created_at": board.created_at,
+            "created_at": board.created_at.strftime("%d-%m-%Y %H:%M:%S"),
             "updated_by": board.updated_by.full_name if board.updated_by else "Unknown",
-            "updated_at": board.updated_at,
+            "updated_at": board.updated_at.strftime("%d-%m-%Y %H:%M:%S"),
             "members": [
                 {   
                     "user_id": member.user_id,
@@ -76,9 +76,9 @@ def get_my_board(request):
                 "Due_date": task.due_date,
                 "Assigned_to": task.assigned_to.full_name if task.assigned_to else "Unassigned",    # type: ignore
                 "Created_by": task.created_by.full_name,
-                "Created_at": task.created_at,
+                "Created_at": task.created_at.strftime("%d-%m-%Y %H:%M:%S"),
                 "Updated_by": task.updated_by.full_name if task.updated_by else "None",  # type: ignore    
-                "Updated_at": task.updated_at,   
+                "Updated_at": task.updated_at.strftime("%d-%m-%Y %H:%M:%S"),   
                 "media_files": {
                     "images": [
                         {
