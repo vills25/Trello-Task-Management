@@ -1,12 +1,11 @@
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from django.db import transaction
 from trello_app.models import User, Board,TaskCard, TaskAttachment, TaskImage
-from trello_app.serializers import TaskCardSerializer, TaskAttachmentSerializer, TaskImageSerializer
-from django.utils import timezone
-from datetime import datetime
+from trello_app.serializers import TaskCardSerializer
+
 
 # Search Task Cards    
 @api_view(['GET'])
@@ -356,3 +355,4 @@ def replace_task_mediafiles(request):
         
     except TaskCard.DoesNotExist:
         return Response({"error": "Task not found"}, status= status.HTTP_404_NOT_FOUND)    
+
