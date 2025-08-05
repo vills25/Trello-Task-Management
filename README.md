@@ -1,6 +1,28 @@
 # Trello-Task-Management
+## Register Output demo
+```json
+{
+    "message": "User registered successfully.",
+    "user_id": 8,
+    "email": "rajat@gmail.com",
+    "username": "@rajat123",
+    "full_name": "Rajat Sharma"
+}
+```
 
-# Main Task Board of User Output Demo (Postman Output)
+## Login Output
+```json
+{
+    "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc1NDQ3MjUwOCwiaWF0IjoxNzU0Mzg2MTA4LCJqdGkiOiI4YTRhNjFjMTZiYWI0ZjY1ODYxMzkxMDhlZTIwZWE1NyIsInVzZXJfaWQiOiI4In0.DloC73awZLpo5JtEGX_s8KixHkI7B3JS1lzxB_KNJVE",
+    "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU0Mzg3MzA4LCJpYXQiOjE3NTQzODYxMDgsImp0aSI6IjY1ODVhNzEyYmZiMTQ2ZmU4N2IwMjlkYTRmYTNjZjFjIiwidXNlcl9pZCI6IjgifQ.Ts96NLMEvsiDxISXW5bIr8UR9ZTTJQQ7ErIVY4-IXsY",
+    "user": {
+        "user_id": 8,
+        "username": "@rajat123",
+        "email": "rajat@gmail.com",
+        "full_name": "Rajat Sharma"
+    }
+}
+````
 
 ## This is User's Main Task Board(Postman Output)
 
