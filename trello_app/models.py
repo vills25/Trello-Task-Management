@@ -12,7 +12,7 @@ class User(AbstractUser):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    REQUIRED_FIELDS = ['email', 'full_name']  # 'username' is required by default
+    REQUIRED_FIELDS = ['email', 'full_name']
 
     def __str__(self):
         return self.username
@@ -36,10 +36,7 @@ class Board(models.Model):
     board_id = models.AutoField(primary_key=True)
     title = models.CharField(max_length=100)
     description = models.TextField(blank=True)
-    visibility = models.CharField(max_length=10, choices=(
-        ("private", "Private"), 
-        ("public", "Public")
-    ), default='private')
+    visibility = models.CharField(max_length=10, choices=(("private", "Private"), ("public", "Public")), default='private')
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="created_boards")
     members = models.ManyToManyField(User, related_name="member_boards")
     created_at = models.DateTimeField(auto_now_add=True)
