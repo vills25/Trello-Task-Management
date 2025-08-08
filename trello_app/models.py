@@ -53,11 +53,7 @@ class TaskCard(models.Model):
     title = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     due_date = models.DateField(blank=True, null=True)
-    is_completed = models.CharField(max_length=10, choices=(
-        ("pending", "Pending"), 
-        ("doing", "Doing"), 
-        ("completed", "Completed")
-    ), default='pending')
+    is_completed = models.CharField(max_length=10, choices=(("pending", "Pending"), ("doing", "Doing"), ("completed", "Completed")), default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name='task_updated_by')
