@@ -7,12 +7,11 @@ urlpatterns = [
     # Authentication Urls 
     path('register_user/', register_user),
     path('login_user/', login_user),
-    # path('logout_user/', logout_user),
     path('forgot_password_sent_email/', forgot_password_sent_email),
     path('reset_password/', reset_password),
     path('update_profile/', update_profile),
     path('delete_profile/', delete_profile),
-    path('view_all_users/', view_all_users),
+    path('search_view_all_users/', search_view_all_users),
     path('view_my_profile/', view_my_profile),
     
     # Board Urls
@@ -29,9 +28,5 @@ urlpatterns = [
     path('create_task/', create_task),
     path('update_task/', update_task),
     path('delete_task/', delete_task),
-    path('mark_task_complete/', mark_task_complete),
-    path('add_media_files/', add_media_files),
-    path('delete_task_mediafile/', delete_task_mediafile),
-    path('replace_task_mediafiles/', replace_task_mediafiles),
     path('search_tasks/', search_tasks),
 ]    

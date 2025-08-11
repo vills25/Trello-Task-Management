@@ -72,22 +72,6 @@ def login_user(request):
         })
     return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
-
-# #Logout User
-# @api_view(['POST'])
-# @permission_classes([IsAuthenticated])
-# def logout_user(request):
-#     try:
-#         refresh_token = request.data.get("refresh_token")
-#         if not refresh_token:
-#             return Response({"error": "Refresh token required"}, status=status.HTTP_400_BAD_REQUEST)
-
-#         token = RefreshToken(refresh_token)
-#         token.blacklist()
-#         return Response({"message": "logged out successfully"}, status=status.HTTP_200_OK)
-#     except Exception as e:
-#         return Response({"error":str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
 ###########################################################################
 
 #Generate OTP
@@ -204,9 +188,9 @@ def delete_profile(request):
         return Response({"error": "User not found"}, status= status.HTTP_404_NOT_FOUND)
 
 # View All Users
-@api_view(['GET'])
+@api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def view_all_users(request):
+def search_view_all_users(request):
     try:
         if not request.user.is_superuser:
             return Response({"error": "You do not have permission to view all users"}, status=status.HTTP_403_FORBIDDEN)

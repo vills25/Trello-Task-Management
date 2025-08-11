@@ -28,166 +28,10 @@ def create_board(request):
             }, status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    
-# #View for full board details
-# @api_view(['GET'])
-# @permission_classes([IsAuthenticated])
-# def get_my_board(request):
-#     try:
-           
-#         board_id = request.data.get('board_id')
-
-#         if not board_id:
-
-#             boards = Board.objects.filter(members=request.user)
-#             serializer = BoardSerializer(boards, many=True)
-#             return Response({"data": serializer.data}, status=status.HTTP_200_OK)
-
-#         try:
-#             board = Board.objects.get(board_id=board_id, members=request.user)
-#         except Board.DoesNotExist:
-#             return Response({"error": "Board not found"}, status=status.HTTP_404_NOT_FOUND)
-
-#         members = board.members.all()
-        
-#         board_data = {
-#             "board_id": board.board_id,
-#             "title": board.title,
-#             "description": board.description,
-#             "visibility": board.visibility,
-#             "created_by":  board.created_by.full_name if board.created_by else "Unknown",
-#             "created_at": board.created_at.strftime("%d-%m-%Y %H:%M:%S"),
-#             "updated_by": board.updated_by.full_name if board.updated_by else "Unknown",
-#             "updated_at": board.updated_at.strftime("%d-%m-%Y %H:%M:%S"),
-#             "members": [
-#                 {   
-#                     "user_id": member.user_id,
-#                     "full_name": member.full_name
-#                 }
-#                 for member in members
-#             ],
-
-#             "Tasks Cards": [] 
-#         }
-        
-#         tasks = TaskCard.objects.filter(board=board).select_related('created_by', 'updated_by', 'assigned_to')
-
-#         for task in tasks:
-#             task_images = TaskImage.objects.filter(task_card=task)
-#             task_attachments = TaskAttachment.objects.filter(task_card=task)
-
-#             board_data["Tasks Cards"].append({
-#                 "Task_id": task.task_id,
-#                 "Title": task.title,
-#                 "Description": task.description,
-#                 "Task Status": task.is_completed,
-#                 "Due_date": task.due_date,
-#                 "Assigned_to": task.assigned_to.full_name if task.assigned_to else "Unassigned",    # type: ignore
-#                 "Created_by": task.created_by.full_name,
-#                 "Created_at": task.created_at.strftime("%d-%m-%Y %H:%M:%S"),
-#                 "Updated_by": task.updated_by.full_name if task.updated_by else "None",  # type: ignore    
-#                 "Updated_at": task.updated_at.strftime("%d-%m-%Y %H:%M:%S"),   
-#                 "media_files": {
-#                     "images": [
-#                         {
-#                             "id": image.task_image_id,
-#                             "file_url": image.task_image.url,
-#                         } for image in task_images
-#                     ],
-
-#                     "attachments": [
-#                         {   
-#                             "id": attachment.task_attachment_id,
-#                             "file_url": attachment.task_attachment.url,
-#                         } for attachment in task_attachments
-#                     ]
-#                 }
-#             })
-
-#         return Response({"message": "User data fatched Successfull", "Taskboard data": board_data}, status=status.HTTP_200_OK)
-#     except Board.DoesNotExist:
-#         return Response({"error": "Board not found"}, status= status.HTTP_404_NOT_FOUND)
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_my_board(request):
-    board_id = request.data.get('board_id')
-
-    if board_id:
-        try:
-            board = Board.objects.get(board_id=board_id, members=request.user)
-        except Board.DoesNotExist:
-            return Response({"error": "Board not found"}, status=status.HTTP_404_NOT_FOUND)
-
-        return Response({"Taskboard data": get_board_details(board)}, status=status.HTTP_200_OK)
-
-    boards = Board.objects.filter(members=request.user)
-    all_boards_data = (get_board_details(board) for board in boards)
-
-    return Response({"message": "User data fatched Successfull", "Taskboard data": all_boards_data}, status=status.HTTP_200_OK)
-
-# Get All Board detai of User
-def get_board_details(board):
-
-    members = board.members.all()
-
-    board_data = {
-        "board_id": board.board_id,
-        "title": board.title,
-        "description": board.description,
-        "visibility": board.visibility,
-        "created_by": board.created_by.full_name if board.created_by else "Unknown",
-        "created_at": board.created_at.strftime("%Y-%m-%d %H:%M:%S"),
-        "updated_by": board.updated_by.full_name if board.updated_by else "Unknown",
-        "updated_at": board.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
-        "members": [
-            {
-                "user_id": member.user_id,
-                "full_name": member.full_name
-            }
-            for member in members
-        ],
-        "Tasks Cards": []
-    }
-
-    tasks = TaskCard.objects.filter(board=board).select_related('created_by', 'updated_by', 'assigned_to')
-
-    for task in tasks:
-        task_images = TaskImage.objects.filter(task_card=task)
-        task_attachments = TaskAttachment.objects.filter(task_card=task)
-
-        board_data["Tasks Cards"].append({
-            "Task_id": task.task_id,
-            "Title": task.title,
-            "Description": task.description,
-            "Task Status": task.is_completed,
-            "Due_date": task.due_date,
-            "Assigned_to": task.assigned_to.full_name if task.assigned_to else "Unassigned",
-            "Created_by": task.created_by.full_name,
-            "Created_at": task.created_at.strftime("%Y-%m-%d %H:%M:%S"),
-            "Updated_by": task.updated_by.full_name if task.updated_by else "None",
-            "Updated_at": task.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
-            "media_files": {
-                "images": [
-                    {
-                        "id": image.task_image_id,
-                        "file_url": image.task_image.url,
-                    } for image in task_images
-                ],
-                "attachments": [
-                    {
-                        "id": attachment.task_attachment_id,
-                        "file_url": attachment.task_attachment.url,
-                    } for attachment in task_attachments
-                ]
-            }
-        })
-
-    return board_data
 
 
 #Update User Board
-@api_view(['PUT', 'PATCH'])
+@api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 def update_board(request):
     try:
@@ -232,7 +76,7 @@ def update_board(request):
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
 def delete_board(request):
-    try:
+    try: 
         board_id = request.data.get("board_id")
         board = Board.objects.get(board_id=board_id, created_by=request.user)
         board.delete()
@@ -316,12 +160,93 @@ def view_board_members(request):
         return Response({"error": "Task Board not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
+# #View for full board details
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_my_board(request):
+    try:
+           
+        board_id = request.data.get('board_id')
+
+        if not board_id:
+
+            boards = Board.objects.filter(members=request.user)
+            serializer = BoardSerializer(boards, many=True)
+            return Response({"data": serializer.data}, status=status.HTTP_200_OK)
+
+        try:
+            board = Board.objects.get(board_id=board_id, members=request.user)
+        except Board.DoesNotExist:
+            return Response({"error": "Board not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        members = board.members.all()
+        
+        board_data = {
+            "board_id": board.board_id,
+            "title": board.title,
+            "description": board.description,
+            "visibility": board.visibility,
+            "created_by":  board.created_by.full_name if board.created_by else "Unknown",
+            "created_at": board.created_at.strftime("%d-%m-%Y %H:%M:%S"),
+            "updated_by": board.updated_by.full_name if board.updated_by else "Unknown",
+            "updated_at": board.updated_at.strftime("%d-%m-%Y %H:%M:%S"),
+            "members": [
+                {   
+                    "user_id": member.user_id,
+                    "full_name": member.full_name
+                }
+                for member in members
+            ],
+
+            "Tasks Cards": [] 
+        }
+        
+        tasks = TaskCard.objects.filter(board=board).select_related('created_by', 'updated_by', 'assigned_to')
+
+        for task in tasks:
+            task_images = TaskImage.objects.filter(task_card=task)
+            task_attachments = TaskAttachment.objects.filter(task_card=task)
+
+            board_data["Tasks Cards"].append({
+                "Task_id": task.task_id,
+                "Title": task.title,
+                "Description": task.description,
+                "Task Status": task.is_completed,
+                "Due_date": task.due_date,
+                "Assigned_to": task.assigned_to.full_name if task.assigned_to else "Unassigned",    # type: ignore
+                "Created_by": task.created_by.full_name,
+                "Created_at": task.created_at.strftime("%d-%m-%Y %H:%M:%S"),
+                "Updated_by": task.updated_by.full_name if task.updated_by else "None",  # type: ignore    
+                "Updated_at": task.updated_at.strftime("%d-%m-%Y %H:%M:%S"),   
+                "media_files": {
+                    "images": [
+                        {
+                            "id": image.task_image_id,
+                            "file_url": image.task_image.url,
+                        } for image in task_images
+                    ],
+
+                    "attachments": [
+                        {   
+                            "id": attachment.task_attachment_id,
+                            "file_url": attachment.task_attachment.url,
+                        } for attachment in task_attachments
+                    ]
+                }
+            })
+
+        return Response({"message": "User data fatched Successfull", "Taskboard data": board_data}, status=status.HTTP_200_OK)
+    except Board.DoesNotExist:
+        return Response({"error": "Board not found"}, status= status.HTTP_404_NOT_FOUND)
+
+
+# Search Board members.
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def search_boards(request):    
-    try:    
+def search_boards(request):   
+    try:
         data = request.data
-        
+
         board_id = data.get('board_id')
         title = data.get('title','')
         description = data.get('descriptionitle','')
