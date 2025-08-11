@@ -8,27 +8,30 @@ from trello_app.serializers import TaskCardSerializer
 
 
 # Search Task Cards    
-@api_view(['GET'])
+@api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def search_tasks(request):
-    try:    
+    try:
         data = request.data
-        
+
         task_id = data.get('task_id')
+        title = data.get('title')
         board = data.get('board','')
         description = data.get('description','')
         due_date= data.get('due_date','')
         created_by= data.get('created_by','')
         is_completed= data.get('is_completed','')
-        updated_by= data.get('updated_by','')
 
-        queryset = Board.objects.filter()
+        queryset = TaskCard.objects.all()
 
         if task_id:
                 queryset = queryset.filter(pk=task_id)
 
+        if title:
+            queryset = queryset.filter(title__icontains = title)
+
         if board:
-                queryset = queryset.filter(board__icontains=board)
+                queryset = queryset.filter(board__title__icontains=board)
 
         if description:
                 queryset = queryset.filter(description__icontains=description)
@@ -39,51 +42,17 @@ def search_tasks(request):
         if created_by:
                 queryset = queryset.filter(created_by__icontains=created_by)
 
-        if updated_by:
-                queryset = queryset.filter(updated_by__icontains=updated_by)
-
         if is_completed:
                 queryset = queryset.filter(is_completed__icontains=is_completed)
-        
+
         if not queryset.exists():
                 return Response({"message": "No matching Tasks found"}, status=status.HTTP_404_NOT_FOUND)
-        
+
         serializer = TaskCardSerializer(queryset, many=True)
         return Response({"results": serializer.data}, status=status.HTTP_200_OK)
-    
+
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-# View Task Cards
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def task_get(request):
-    task_id = request.data.get("task_id")
-    if not task_id:
-        return Response({"error": "task_id is required"}, status=status.HTTP_400_BAD_REQUEST)
-
-    try:
-        task = TaskCard.objects.get(task_id=task_id)
-    except TaskCard.DoesNotExist:
-        return Response({"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
-    
-    user = request.user
-   
-    if task.created_by != user:
-        return Response({"error": "You can not view otheer tasks."}, status=status.HTTP_403_FORBIDDEN)
-
-    return Response({
-                     "Task_id": task.task_id,
-                     "Task_title": task.title,
-                     "Task_Board": task.board.title,
-                     "Description": task.description,
-                     "Task_Status": task.is_completed,
-                     "Assigned_to":task.assigned_to.full_name if task.assigned_to else "Unassigned",
-                     "Created_by": task.created_by.full_name,
-                     "Created_at": task.created_at.strftime("%d-%m-%Y %H:%M:%S"),
-                     "Updated_by": task.updated_by.full_name if task.updated_by else "None",
-                     "Updated_at": task.updated_at.strftime("%d-%m-%Y %H:%M:%S"),
-                     }, status=status.HTTP_200_OK)
 
 
 # Create Task Card
@@ -144,7 +113,7 @@ def create_task(request):
 
 
 # Update Task Card
-@api_view(['PUT', 'PATCH'])
+@api_view(['PATCH'])
 @permission_classes([IsAuthenticated])
 def update_task(request):
 
@@ -201,7 +170,7 @@ def update_task(request):
                     task_attachment.save()
                 else:
                     TaskAttachment.objects.create(task=task, file=request.FILES["attachment"])
-        
+
             task.save()
             serializer = TaskCardSerializer(task)
             return Response({"message": "Task updated successfully", "Updated task Details":serializer.data}, status=status.HTTP_200_OK)
@@ -218,15 +187,15 @@ def delete_task(request):
 
     if not task_id:
         return Response({"Task ID is Required"}, status=status.HTTP_400_BAD_REQUEST)
-    
+
     try:
         task = TaskCard.objects.get(id=task_id)
         if request.user != task.created_by:
             return Response({"error": "You cannot delete this task"}, status=status.HTTP_403_FORBIDDEN)
-        
+
         task.delete()
         return Response({"message": "Task deleted successfully"}, status= status.HTTP_200_OK)
-    
+
     except TaskCard.DoesNotExist:
         return Response({"error": "Task not found"}, status= status.HTTP_404_NOT_FOUND)
 
@@ -265,7 +234,7 @@ def mark_task_complete(request):
 
             task.save()
             return Response({"message": "Task status Updated"}, status= status.HTTP_200_OK)
-        
+            
     except TaskCard.DoesNotExist:
         return Response({"error": "Task not found"},status= status.HTTP_404_NOT_FOUND)
 
@@ -296,7 +265,7 @@ def add_media_files(request):
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
 def delete_task_mediafile(request):
-   
+    
     try:  # recive file id and type of file from user
         mediafile_type = request.data.get("type") 
         mediafile_id = request.data.get("file_id")

@@ -28,7 +28,7 @@ def create_board(request):
             }, status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
+    
 # #View for full board details
 # @api_view(['GET'])
 # @permission_classes([IsAuthenticated])
@@ -137,9 +137,9 @@ def get_board_details(board):
         "description": board.description,
         "visibility": board.visibility,
         "created_by": board.created_by.full_name if board.created_by else "Unknown",
-        "created_at": board.created_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+        "created_at": board.created_at.strftime("%Y-%m-%d %H:%M:%S"),
         "updated_by": board.updated_by.full_name if board.updated_by else "Unknown",
-        "updated_at": board.updated_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+        "updated_at": board.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
         "members": [
             {
                 "user_id": member.user_id,
@@ -164,9 +164,9 @@ def get_board_details(board):
             "Due_date": task.due_date,
             "Assigned_to": task.assigned_to.full_name if task.assigned_to else "Unassigned",
             "Created_by": task.created_by.full_name,
-            "Created_at": task.created_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+            "Created_at": task.created_at.strftime("%Y-%m-%d %H:%M:%S"),
             "Updated_by": task.updated_by.full_name if task.updated_by else "None",
-            "Updated_at": task.updated_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+            "Updated_at": task.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
             "media_files": {
                 "images": [
                     {
@@ -361,3 +361,5 @@ def search_boards(request):
     
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+    

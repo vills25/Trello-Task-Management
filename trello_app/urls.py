@@ -26,7 +26,6 @@ urlpatterns = [
     path('search_boards/', search_boards),
 
     # Task Urls
-    path('task_get/', task_get),
     path('create_task/', create_task),
     path('update_task/', update_task),
     path('delete_task/', delete_task),
