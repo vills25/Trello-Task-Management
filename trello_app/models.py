@@ -63,6 +63,19 @@ class TaskCard(models.Model):
     def __str__(self):
         return self.title
 
+class TaskList(models.Model):
+    tasklist_id = models.AutoField(primary_key=True)
+    task_card = models.ForeignKey(TaskCard, on_delete=models.CASCADE, related_name="task_lists")
+    tasklist_title = models.CharField(max_length=200)
+    tasklist_description = models.TextField(blank=True)
+    is_completed = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="list_created_by")
+    updated_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name="list_updated_by")
+
+    def __str__(self):
+        return self.tasklist_title
 
 class TaskImage(models.Model):
     task_image_id = models.AutoField(primary_key=True)

@@ -3,8 +3,8 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from django.db import transaction
-from trello_app.models import Board, User, TaskCard, TaskAttachment, TaskImage
-from trello_app.serializers import BoardSerializer
+from trello_app.models import Board, User, TaskCard, TaskAttachment, TaskImage, TaskList
+from trello_app.serializers import BoardSerializer, TaskListSerializer
 
 # Create User Board
 @api_view(['POST'])
@@ -20,12 +20,8 @@ def create_board(request):
                 created_by=request.user
             )
             board.members.add(request.user)
-            return Response({
-                "message": "Board created successfully",
-                "board_id": board.board_id,
-                "title": board.title,
-                "visibility": board.visibility
-            }, status=status.HTTP_201_CREATED)
+            serializer = BoardSerializer(board)
+            return Response({"message": "Board created successfully", "Board Data": serializer.data}, status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -57,16 +53,9 @@ def update_board(request):
                 board.visibility =  data['visibility']     
             
             board.save()
-
-            return Response({
-                "message": "Board updated successfully",
-                "board_id": board.board_id,
-                "title": board.title,
-                "description": board.description,
-                "visibility": board.visibility
-    
-            }, status=status.HTTP_200_OK)
-    
+            serializer = BoardSerializer(board)
+            return Response({"message": "Board Updated successfully", "Board Data": serializer.data}, status=status.HTTP_200_OK)
+         
     except Board.DoesNotExist:
         return Response({"error": "Board not found"}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
@@ -81,20 +70,6 @@ def delete_board(request):
         board = Board.objects.get(board_id=board_id, created_by=request.user)
         board.delete()
         return Response({"message": "Board deleted successfully"}, status=status.HTTP_200_OK)
-    except Board.DoesNotExist:
-        return Response({"error": "Board not found"}, status=status.HTTP_404_NOT_FOUND)
-
-# Clear User Board (remove all lists cards from board but keep board)
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def clear_board(request):
-    try:
-        board_id = request.data.get("board_id")
-        board = Board.objects.get(board_id=board_id, created_by=request.user)
-    
-        board.objects.all().delete()
-    
-        return Response({"message": "Board cleared successfully"}, status=status.HTTP_200_OK)
     except Board.DoesNotExist:
         return Response({"error": "Board not found"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -161,11 +136,11 @@ def view_board_members(request):
 
 
 # #View for full board details
-@api_view(['GET'])
+@api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def get_my_board(request):
     try:
-           
+        
         board_id = request.data.get('board_id')
 
         if not board_id:
@@ -202,21 +177,21 @@ def get_my_board(request):
         }
         
         tasks = TaskCard.objects.filter(board=board).select_related('created_by', 'updated_by', 'assigned_to')
-
+        
         for task in tasks:
             task_images = TaskImage.objects.filter(task_card=task)
             task_attachments = TaskAttachment.objects.filter(task_card=task)
+            tasks_lists = TaskList.objects.filter(task_card=task)
 
             board_data["Tasks Cards"].append({
                 "Task_id": task.task_id,
                 "Title": task.title,
                 "Description": task.description,
-                "Task Status": task.is_completed,
                 "Due_date": task.due_date,
-                "Assigned_to": task.assigned_to.full_name if task.assigned_to else "Unassigned",    # type: ignore
+                "Assigned_to": task.assigned_to.full_name if task.assigned_to else "Unassigned",
                 "Created_by": task.created_by.full_name,
                 "Created_at": task.created_at.strftime("%d-%m-%Y %H:%M:%S"),
-                "Updated_by": task.updated_by.full_name if task.updated_by else "None",  # type: ignore    
+                "Updated_by": task.updated_by.full_name if task.updated_by else "None",   
                 "Updated_at": task.updated_at.strftime("%d-%m-%Y %H:%M:%S"),   
                 "media_files": {
                     "images": [
@@ -232,7 +207,8 @@ def get_my_board(request):
                             "file_url": attachment.task_attachment.url,
                         } for attachment in task_attachments
                     ]
-                }
+                },
+                "task_lists": TaskListSerializer(tasks_lists, many=True).data
             })
 
         return Response({"message": "User data fatched Successfull", "Taskboard data": board_data}, status=status.HTTP_200_OK)
@@ -282,9 +258,8 @@ def search_boards(request):
                 return Response({"message": "No matching Boards found"}, status=status.HTTP_404_NOT_FOUND)
         
         serializer = BoardSerializer(queryset, many=True)
-        return Response({"results": serializer.data}, status=status.HTTP_200_OK)
+        return Response({"Task Board Data": serializer.data}, status=status.HTTP_200_OK)
     
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    
     

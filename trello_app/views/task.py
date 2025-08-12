@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from django.db import transaction
-from trello_app.models import User, Board,TaskCard, TaskAttachment, TaskImage
+from trello_app.models import User, Board,TaskCard, TaskAttachment, TaskImage, TaskList
 from trello_app.serializers import TaskCardSerializer
 
 
@@ -49,7 +49,7 @@ def search_tasks(request):
                 return Response({"message": "No matching Tasks found"}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = TaskCardSerializer(queryset, many=True)
-        return Response({"results": serializer.data}, status=status.HTTP_200_OK)
+        return Response({"Task Data": serializer.data}, status=status.HTTP_200_OK)
 
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -96,15 +96,25 @@ def create_task(request):
                 description=data.get("description"),
                 due_date=data.get("due_date"),
                 is_completed=is_completed,
-                created_by=user,
+                created_by=request.user,
                 assigned_to=assigned_to_user
             )
-
+                
             for img in request.FILES.getlist("images"):
                 TaskImage.objects.create(task_card=task, task_image=img)
 
             for file in request.FILES.getlist("attachments"):
                 TaskAttachment.objects.create(task_card=task, task_attachment=file)
+            
+            subtasks = data.get('task_lists', [])
+            for sub in subtasks:
+                if sub.get("tasklist_title") and sub.get("tasklist_description"):
+                        TaskList.objects.create(
+                            task_card=task,
+                            tasklist_title=sub.get("tasklist_title"),
+                            tasklist_description=sub.get("tasklist_description"),
+                            created_by=request.user,
+                        )
 
             return Response({"message": "Task created successfully", "task_id": task.task_id}, status= status.HTTP_201_CREATED)
 
@@ -156,7 +166,7 @@ def update_task(request):
                         return Response({"error": "Assigned user not found"}, status=status.HTTP_404_NOT_FOUND)
                 else:
                     task.assigned_to = None
-
+            
             if "image" in request.FILES:
                 if task_image:
                     task_image. task_image = request.FILES["image"]
@@ -170,6 +180,28 @@ def update_task(request):
                     task_attachment.save()
                 else:
                     TaskAttachment.objects.create(task=task, file=request.FILES["attachment"])
+
+            if "subtasks" in data:
+                subtasks = request.data.get('subtasks', [])
+                for sub in subtasks:
+                    if "tasklist_id" in sub:  
+                        try:
+                            task_list = TaskList.objects.get(tasklist_id=sub['tasklist_id'], task_card=task)
+                            task_list.tasklist_title = sub.get('tasklist_title', task_list.tasklist_title)
+                            task_list.tasklist_description = sub.get('tasklist_description', task_list.tasklist_description)
+                            task_list.is_completed = sub.get('is_completed', task_list.is_completed)
+                            task_list.updated_by = request.user
+                            task_list.save()
+                        except TaskList.DoesNotExist:
+                            continue
+                    else:
+                        TaskList.objects.create(
+                            task_card=task,
+                            tasklist_title=sub.get('tasklist_title', ''),
+                            tasklist_description=sub.get('tasklist_description', ''),
+                            is_completed=sub.get('is_completed', False),
+                            created_by=request.user
+                        )
 
             task.save()
             serializer = TaskCardSerializer(task)
@@ -198,3 +230,5 @@ def delete_task(request):
 
     except TaskCard.DoesNotExist:
         return Response({"error": "Task not found"}, status= status.HTTP_404_NOT_FOUND)
+
+
