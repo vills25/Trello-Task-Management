@@ -23,10 +23,12 @@ urlpatterns = [
     path('view_board_members/', view_board_members),
     path('get_my_board/', get_my_board),
     path('search_boards/', search_boards),
+    path('star_board/', star_board),
 
     # Task Urls
     path('create_task/', create_task),
     path('update_task/', update_task),
     path('delete_task/', delete_task),
     path('search_tasks/', search_tasks),
+    path('star_task_card/', star_task_card),
 ]    

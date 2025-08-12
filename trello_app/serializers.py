@@ -26,7 +26,7 @@ class TaskCardSerializer(serializers.ModelSerializer):
     task_lists = TaskListSerializer(many=True, read_only=True)
     class Meta:
         model = TaskCard
-        fields = ['task_id', 'board', 'title','description','is_completed','due_date','created_at', 'created_by','updated_at', 'updated_by', 'assigned_to', 'task_lists']
+        fields = ['is_starred', 'task_id', 'board', 'title','description','is_completed','due_date','created_at', 'created_by','updated_at', 'updated_by', 'assigned_to', 'task_lists']
 
 class BoardSerializer(serializers.ModelSerializer):
     created_by = UserDetailSerializer(read_only=True)
@@ -35,7 +35,7 @@ class BoardSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Board
-        fields = ['board_id', 'title', 'description', 'visibility', 'created_by', 'members', 'created_at', 'updated_at', 'updated_by', 'task_cards']
+        fields = ['board_id', 'title', 'description', 'visibility', 'created_by', 'members', 'created_at', 'updated_at', 'updated_by', 'is_starred','task_cards']
 
 class TaskImageSerializer(serializers.ModelSerializer):
     class Meta:

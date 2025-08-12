@@ -145,7 +145,7 @@ def get_my_board(request):
 
         if not board_id:
 
-            boards = Board.objects.filter(members=request.user)
+            boards = Board.objects.filter(members=request.user).order_by('-is_starred'  )
             serializer = BoardSerializer(boards, many=True)
             return Response({"data": serializer.data}, status=status.HTTP_200_OK)
 
@@ -176,7 +176,7 @@ def get_my_board(request):
             "Tasks Cards": [] 
         }
         
-        tasks = TaskCard.objects.filter(board=board).select_related('created_by', 'updated_by', 'assigned_to')
+        tasks = TaskCard.objects.filter(board=board).select_related('created_by', 'updated_by', 'assigned_to').order_by('-is_starred')
         
         for task in tasks:
             task_images = TaskImage.objects.filter(task_card=task)
@@ -231,7 +231,7 @@ def search_boards(request):
         updated_by= data.get('updated_by','')
         members= data.get('members','')
 
-        queryset = Board.objects.filter()
+        queryset = Board.objects.filter().order_by('-is_starred')
 
         if board_id:
                 queryset = queryset.filter(pk=board_id)
@@ -262,4 +262,16 @@ def search_boards(request):
     
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    
+
+# Give Star To Board
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def star_board(request):
+    board_id = request.data.get('board_id')
+    try:
+        board = Board.objects.get(board_id=board_id, members=request.user)
+        board.is_starred = not board.is_starred
+        board.save()
+        return Response({"message": "Board star status updated", "is_starred": board.is_starred})
+    except Board.DoesNotExist:
+        return Response({"error": "Board not found"}, status=status.HTTP_404_NOT_FOUND)

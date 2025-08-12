@@ -22,7 +22,7 @@ def search_tasks(request):
         created_by= data.get('created_by','')
         is_completed= data.get('is_completed','')
 
-        queryset = TaskCard.objects.all()
+        queryset = TaskCard.objects.all().order_by('-is_starred')
 
         if task_id:
                 queryset = queryset.filter(pk=task_id)
@@ -231,4 +231,15 @@ def delete_task(request):
     except TaskCard.DoesNotExist:
         return Response({"error": "Task not found"}, status= status.HTTP_404_NOT_FOUND)
 
-
+# Give Star To Task
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def star_task_card(request):
+    task_id = request.data.get('task_id')
+    try:
+        task = TaskCard.objects.get(task_id=task_id)
+        task.is_starred = not task.is_starred
+        task.save()
+        return Response({"message": "Task star status updated", "is_starred": task.is_starred})
+    except TaskCard.DoesNotExist:
+        return Response({"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
