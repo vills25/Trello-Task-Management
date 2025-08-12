@@ -243,3 +243,4 @@ def star_task_card(request):
         return Response({"message": "Task star status updated", "is_starred": task.is_starred})
     except TaskCard.DoesNotExist:
         return Response({"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
+    

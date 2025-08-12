@@ -28,7 +28,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-#################################################################################
+###########################################################################################################################################
+###########################################################################################################################################
 
 # Application definition
 INSTALLED_APPS = [
@@ -67,7 +68,7 @@ from datetime import timedelta
 
 SIMPLE_JWT = {
     "USER_ID_FIELD": "user_id",
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=20),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
@@ -87,7 +88,8 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-###################################################################################
+###########################################################################################################################################
+###########################################################################################################################################
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
