@@ -59,14 +59,13 @@ def login_user(request):
     user_data = {
         "user_id": user.user_id,           # type: ignore
         "username": user.username,
-        "email": user.email,
         "full_name": user.full_name,       # type: ignore
     }
     
     if user:
         refresh = RefreshToken.for_user(user)
         return Response({
-            "refresh": str(refresh),
+            # "refresh": str(refresh),
             "access": str(refresh.access_token),
             "user": user_data,
         })

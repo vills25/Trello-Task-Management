@@ -5,6 +5,8 @@ from rest_framework import status
 from django.db import transaction
 from trello_app.models import Board, User, TaskCard, TaskAttachment, TaskImage, TaskList
 from trello_app.serializers import BoardSerializer, TaskListSerializer
+from datetime import date, timedelta
+from django.utils import timezone
 
 # Create User Board
 @api_view(['POST'])
@@ -80,14 +82,14 @@ def delete_board(request):
 def add_member_to_board(request):
     try:
         board_id = request.data.get("board_id")
-        user_email = request.data.get("email")
+        user_emails = request.data.get("email")
 
         board = Board.objects.get(board_id=board_id, created_by=request.user)
-        user = User.objects.get(email=user_email)
+        user = User.objects.filter(email__in=user_emails)
 
-        board.members.add(user)
+        board.members.add(*user)
 
-        return Response({"message": f"{user.username} added to board"}, status=status.HTTP_200_OK)
+        return Response({"message": f"{user.count()} added to board"}, status=status.HTTP_200_OK)
     except Board.DoesNotExist:
         return Response({"error": "Board not found or access denied"}, status=status.HTTP_404_NOT_FOUND)
     except User.DoesNotExist:
@@ -144,10 +146,10 @@ def get_my_board(request):
         board_id = request.data.get('board_id')
 
         if not board_id:
-
             boards = Board.objects.filter(members=request.user).order_by('-is_starred'  )
+
             serializer = BoardSerializer(boards, many=True)
-            return Response({"data": serializer.data}, status=status.HTTP_200_OK)
+            return Response({"Message":"Success","Board data": serializer.data}, status=status.HTTP_200_OK)
 
         try:
             board = Board.objects.get(board_id=board_id, members=request.user)
@@ -178,6 +180,40 @@ def get_my_board(request):
         
         tasks = TaskCard.objects.filter(board=board).select_related('created_by', 'updated_by', 'assigned_to').order_by('-is_starred')
         
+        # Filter Functionality
+        today = timezone.now().date()
+        tomorrow = today + timedelta(days=1)
+        next_week = today + timedelta(weeks=1)
+        month = today + timedelta(days=30)
+        filters = request.data
+
+        if filters.get('assigned_to_me'):
+             tasks = tasks.filter(assigned_to = request.user)
+
+        if 'complated' in filters:
+             if filters['completed']:
+                  tasks = tasks.filter(status = 'completed')
+             else: tasks = tasks.exclude(status='completed') 
+
+        if filters.get('no_due'):
+             tasks = tasks.filter(due_date__isnull = True)
+
+        if filters.get('overdue'):
+             tasks = tasks.filter(due_date__lt=today)
+
+        if filters.get('due_today'):
+            tasks = tasks.filter(due_date=today)
+
+        if filters.get('due_tomorrow'):
+            tasks = tasks.filter(due_date=tomorrow)
+
+        if filters.get('due_next_week'):
+            tasks = tasks.filter(due_date__range=[next_week, month])
+
+        if filters.get('due_on_this_month'):
+            tasks = tasks.filter(due_date__month=today.month)
+
+
         for task in tasks:
             task_images = TaskImage.objects.filter(task_card=task)
             task_attachments = TaskAttachment.objects.filter(task_card=task)

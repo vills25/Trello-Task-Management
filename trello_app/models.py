@@ -36,7 +36,7 @@ class Board(models.Model):
     board_id = models.AutoField(primary_key=True)
     title = models.CharField(max_length=100)
     description = models.TextField(blank=True)
-    visibility = models.CharField(max_length=10, choices=(("private", "Private"), ("public", "Public")), default='private')
+    visibility = models.CharField(max_length=10, choices=(("private", "Private"), ("public", "Public"), ("team", "Team")), default='private')
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="created_boards")
     members = models.ManyToManyField(User, related_name="member_boards")
     created_at = models.DateTimeField(auto_now_add=True)
