@@ -31,118 +31,197 @@
 
 ```json
 {
-  "message": "User data fatched Successfull",
+  "message": "Successfull",
   "Taskboard data": {
-    "board_id": 1,
-    "title": "Rajat's Board",
-    "description": "This is Rajat's Dashboard",
-    "visibility": "Private",
-    "created_by": "Rajat Sharma",
-    "created_at": "08-08-2025 06:54:44",
-    "updated_by": "Rajat",
-    "updated_at": "08-08-2025 06:54:44",
+    "board_id": 3,
+    "title": "Website Redesign",
+    "description": "Complete UI/UX overhaul for main company website",
+    "visibility": "private",
+    "created_by": "Ryan Scott",
+    "created_at": "13-08-2025 07:30:26",
+    "updated_by": "Unknown",
+    "updated_at": "13-08-2025 07:31:43",
     "members": [
       {
-        "user_id": 2,
-        "full_name": "Rajat Sharma"
+        "user_id": 1,
+        "full_name": "asus"
+      },
+      {
+        "user_id": 3,
+        "full_name": "Vishal Sharma"
       },
       {
         "user_id": 5,
         "full_name": "Rahul Lokesh"
       },
       {
-        "user_id": 7,
-        "full_name": "Shreyas Iyer"
+        "user_id": 8,
+        "full_name": "John Doe"
+      },
+      {
+        "user_id": 22,
+        "full_name": "Ryan Scott"
       }
     ],
     "Tasks Cards": [
       {
-        "Task_id": 1,
-        "Title": "Rajat's First Task",
-        "Description": "Rajat'sDescription",
-        "Due_date": "2025-08-11",
-        "Assigned_to": "Shreyas Iyer",
-        "Created_by": "Rajat Sharma",
-        "Created_at": "08-08-2025 06:56:50",
-        "Updated_by": "asus",
-        "Updated_at": "11-08-2025 05:05:23",
-        "media_files": {
-          "images": [
+        "Task_id": 7,
+        "Title": "Q4 Marketing Launch",
+        "Description": "Execute holiday marketing campaign",
+        "Assigned_to": "John Doe",
+        "Created_by": "Ryan Scott",
+        "Created_at": "13-08-2025 09:34:02",
+        "Updated_by": "None",
+        "Updated_at": "13-08-2025 09:34:02",
+        "Media_files": {
+          "Images": [
             {
-              "id": 1,
-              "file_url": "/media/task_images/20241206_jGjsCq9.jpg"
+              "image_url": "http://127.0.0.1:8000/media/task_images/20250620_OBGA.ChainBridgeBudapest_shutterstock_1153376083_bing.jpg"
             }
           ],
-          "attachments": [
+          "Attachments": [
             {
-              "id": 1,
-              "file_url": "/media/task_attachment/lake_night_starry_sky_143961_2560x1440_Nk4qiIN.jpg"
+              "attachment_url": "http://127.0.0.1:8000/media/task_attachment/Trello_Task_Management_App_1.docx"
             }
           ]
         },
-        "task_lists": []
-      },
-      {
-        "Task_id": 2,
-        "Title": "Rajat's Second Task",
-        "Description": "Rajat's Description",
-        "Due_date": "2025-08-14",
-        "Assigned_to": "Unassigned",
-        "Created_by": "Rajat Sharma",
-        "Created_at": "08-08-2025 06:57:13",
-        "Updated_by": "None",
-        "Updated_at": "11-08-2025 05:19:38",
-        "media_files": {
-          "images": [
-            {
-              "id": 2,
-              "file_url": "/media/task_images/20241206_nVWN19y.jpg"
-            }
-          ],
-          "attachments": [
-            {
-              "id": 2,
-              "file_url": "/media/task_attachment/20241206_C5aw4f1.jpg"
-            }
-          ]
-        },
-        "task_lists": []
-      },
-      {
-        "Task_id": 6,
-        "Title": "Website Redesign",
-        "Description": "Redesign Homepage.",
-        "Due_date": "2025-08-14",
-        "Assigned_to": "Rahul Lokesh",
-        "Created_by": "Rajat Sharma",
-        "Created_at": "12-08-2025 07:57:24",
-        "Updated_by": "None",
-        "Updated_at": "12-08-2025 07:57:24",
-        "media_files": {
-          "images": [],
-          "attachments": []
-        },
-        "task_lists": [
+        "Task Lists": [
           {
-            "tasklist_id": 1,
-            "task_card": 6,
-            "tasklist_title": "Wireframe",
-            "tasklist_description": "Create low-fidelity wireframes for the homepage.",
-            "created_at": "12-08-2025 13:27:24",
-            "created_by": 2,
+            "tasklist_id": 3,
+            "task_card": 7,
+            "tasklist_title": "Content Creation",
+            "tasklist_description": "Write blog posts and social media copy",
+            "due_date": "2025-08-15",
+            "created_at": "13-08-2025 15:04:02",
+            "created_by": 22,
             "is_completed": false,
-            "updated_at": "12-08-2025 13:27:24",
+            "updated_at": "13-08-2025 15:04:02",
             "updated_by": null
           },
           {
-            "tasklist_id": 2,
-            "task_card": 6,
-            "tasklist_title": "UI Mockup",
-            "tasklist_description": "Design high-fidelity mockups in Figma.",
-            "created_at": "12-08-2025 13:27:24",
-            "created_by": 2,
+            "tasklist_id": 4,
+            "task_card": 7,
+            "tasklist_title": "Ad Design",
+            "tasklist_description": "Create Facebook/Google ads",
+            "due_date": "2025-09-13",
+            "created_at": "13-08-2025 15:04:02",
+            "created_by": 22,
             "is_completed": false,
-            "updated_at": "12-08-2025 13:27:24",
+            "updated_at": "13-08-2025 15:04:02",
+            "updated_by": null
+          }
+        ]
+      },
+      {
+        "Task_id": 8,
+        "Title": "Database Upgrade",
+        "Description": "Migrate from MySQL to PostgreSQL",
+        "Assigned_to": "David Brown",
+        "Created_by": "Ryan Scott",
+        "Created_at": "13-08-2025 09:35:22",
+        "Updated_by": "None",
+        "Updated_at": "13-08-2025 09:35:22",
+        "Media_files": {
+          "Images": [
+            {
+              "image_url": "http://127.0.0.1:8000/media/task_images/4433065-4d2a8d877c4f4ca39104dd8d1681c265.webp"
+            },
+            {
+              "image_url": "http://127.0.0.1:8000/media/task_images/20250213.jpg"
+            }
+          ],
+          "Attachments": [
+            {
+              "attachment_url": "http://127.0.0.1:8000/media/task_attachment/Trello_Task_Management_App_1_GRCZXoB.docx"
+            }
+          ]
+        },
+        "Task Lists": [
+          {
+            "tasklist_id": 5,
+            "task_card": 8,
+            "tasklist_title": "Backup Data",
+            "tasklist_description": "Create full database backup",
+            "due_date": null,
+            "created_at": "13-08-2025 15:05:22",
+            "created_by": 22,
+            "is_completed": false,
+            "updated_at": "13-08-2025 15:05:22",
+            "updated_by": null
+          },
+          {
+            "tasklist_id": 6,
+            "task_card": 8,
+            "tasklist_title": "Schema Migration",
+            "tasklist_description": "Convert tables to PostgreSQL format",
+            "due_date": null,
+            "created_at": "13-08-2025 15:05:22",
+            "created_by": 22,
+            "is_completed": false,
+            "updated_at": "13-08-2025 15:05:22",
+            "updated_by": null
+          }
+        ]
+      },
+      {
+        "Task_id": 9,
+        "Title": "Mobile App Feature Update",
+        "Description": "Implement new user profile features",
+        "Assigned_to": "Olivia Hall",
+        "Created_by": "Ryan Scott",
+        "Created_at": "13-08-2025 09:47:27",
+        "Updated_by": "None",
+        "Updated_at": "13-08-2025 09:47:27",
+        "Media_files": {
+          "Images": [
+            {
+              "image_url": "http://127.0.0.1:8000/media/task_images/20250213_LHNJ6aF.jpg"
+            },
+            {
+              "image_url": "http://127.0.0.1:8000/media/task_images/20250804_OHR.CaliforniaTidepool_EN-IN9579127212_UHD_bing.jpg"
+            }
+          ],
+          "Attachments": [
+            {
+              "attachment_url": "http://127.0.0.1:8000/media/task_attachment/Trello_Task_Management_App_1_e18Iamg.docx"
+            }
+          ]
+        },
+        "Task Lists": [
+          {
+            "tasklist_id": 7,
+            "task_card": 9,
+            "tasklist_title": "Backend API",
+            "tasklist_description": "Develop new endpoints for profile data",
+            "due_date": "2025-08-15",
+            "created_at": "13-08-2025 15:17:27",
+            "created_by": 22,
+            "is_completed": false,
+            "updated_at": "13-08-2025 15:17:27",
+            "updated_by": null
+          },
+          {
+            "tasklist_id": 8,
+            "task_card": 9,
+            "tasklist_title": "UI Implementation",
+            "tasklist_description": "Build profile screen in React Native",
+            "due_date": "2025-09-12",
+            "created_at": "13-08-2025 15:17:27",
+            "created_by": 22,
+            "is_completed": false,
+            "updated_at": "13-08-2025 15:17:27",
+            "updated_by": null
+          },
+          {
+            "tasklist_id": 9,
+            "task_card": 9,
+            "tasklist_title": "Testing",
+            "tasklist_description": "Conduct QA testing on new features",
+            "due_date": "2025-08-14",
+            "created_at": "13-08-2025 15:17:27",
+            "created_by": 22,
+            "is_completed": false,
+            "updated_at": "13-08-2025 15:17:27",
             "updated_by": null
           }
         ]
