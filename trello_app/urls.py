@@ -2,6 +2,8 @@ from django.urls import path
 from .views.authentication import *
 from .views.board import *
 from .views.task import * 
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     # Authentication Urls 
@@ -31,4 +33,4 @@ urlpatterns = [
     path('delete_task/', delete_task),
     path('search_tasks/', search_tasks),
     path('star_task_card/', star_task_card),
-]    
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
