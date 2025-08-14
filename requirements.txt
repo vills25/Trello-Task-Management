@@ -1,10 +1,16 @@
+asciimatics==1.15.0
 asgiref==3.9.1
-Django==5.2.4
+Django==4.2.23
 django-filter==25.1
 djangorestframework==3.16.0
 djangorestframework_simplejwt==5.5.1
+mariadb==1.1.13
 mysqlclient==2.2.7
+packaging==25.0
 pillow==11.3.0
+pyfiglet==1.0.3
 PyJWT==2.10.1
+pywin32==311
 sqlparse==0.5.3
 tzdata==2025.2
+wcwidth==0.2.13

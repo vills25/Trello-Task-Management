@@ -13,17 +13,15 @@ from trello_app.serializers import TaskCardSerializer
 def search_tasks(request):
     try:
         data = request.data
+        queryset = TaskCard.objects.filter(board__members=request.user).order_by('-is_starred')
 
         task_id = data.get('task_id')
         title = data.get('title')
         board = data.get('board','')
         description = data.get('description','')
-        due_date= data.get('due_date','')
         created_by= data.get('created_by','')
         is_completed= data.get('is_completed','')
-
-        queryset = TaskCard.objects.all().order_by('-is_starred')
-
+        
         if task_id:
                 queryset = queryset.filter(pk=task_id)
 
@@ -31,13 +29,10 @@ def search_tasks(request):
             queryset = queryset.filter(title__icontains = title)
 
         if board:
-                queryset = queryset.filter(board__title__icontains=board)
+                queryset = queryset.filter(board__board_id__icontains=board)
 
         if description:
                 queryset = queryset.filter(description__icontains=description)
-
-        if due_date:
-                queryset = queryset.filter(due_date__icontains=due_date)
 
         if created_by:
                 queryset = queryset.filter(created_by__icontains=created_by)
@@ -49,7 +44,7 @@ def search_tasks(request):
                 return Response({"message": "No matching Tasks found"}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = TaskCardSerializer(queryset, many=True)
-        return Response({"Task Data": serializer.data}, status=status.HTTP_200_OK)
+        return Response({"Task card": serializer.data}, status=status.HTTP_200_OK)
 
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -94,7 +89,6 @@ def create_task(request):
                 board=board,
                 title=data.get("title"),
                 description=data.get("description"),
-                due_date=data.get("due_date"),
                 is_completed=is_completed,
                 created_by=request.user,
                 assigned_to=assigned_to_user
@@ -113,6 +107,7 @@ def create_task(request):
                             task_card=task,
                             tasklist_title=sub.get("tasklist_title"),
                             tasklist_description=sub.get("tasklist_description"),
+                            due_date=sub.get("due_date"),
                             created_by=request.user,
                         )
 
@@ -153,9 +148,6 @@ def update_task(request):
             if 'description' in data:
                 task.description = data['description']
 
-            if 'due_date' in data:
-                task.due_date = data['due_date']    
-
             if 'assigned_to' in data:
                 assigned_to = data["assigned_to"]
                 if assigned_to:
@@ -189,6 +181,7 @@ def update_task(request):
                             task_list = TaskList.objects.get(tasklist_id=sub['tasklist_id'], task_card=task)
                             task_list.tasklist_title = sub.get('tasklist_title', task_list.tasklist_title)
                             task_list.tasklist_description = sub.get('tasklist_description', task_list.tasklist_description)
+                            task_list.due_date = sub.get('due_date', task_list.due_date)
                             task_list.is_completed = sub.get('is_completed', task_list.is_completed)
                             task_list.updated_by = request.user
                             task_list.save()
@@ -199,6 +192,7 @@ def update_task(request):
                             task_card=task,
                             tasklist_title=sub.get('tasklist_title', ''),
                             tasklist_description=sub.get('tasklist_description', ''),
+                            due_date=sub.get('due_date'),
                             is_completed=sub.get('is_completed', False),
                             created_by=request.user
                         )
@@ -243,4 +237,3 @@ def star_task_card(request):
         return Response({"message": "Task star status updated", "is_starred": task.is_starred})
     except TaskCard.DoesNotExist:
         return Response({"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
-    

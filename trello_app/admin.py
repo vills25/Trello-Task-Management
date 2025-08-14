@@ -26,7 +26,6 @@ class TaskAttachmentAdmin(admin.ModelAdmin):
     list_display = ('task_attachment_id', 'task_card', 'task_attachment')
 
 admin.site.register(User, UserAdmin)
-admin.site.register(ForgotPasswordOTP)
 admin.site.register(Board, BoardAdmin)
 admin.site.register(TaskList,TaskListAdmin)
 admin.site.register(TaskCard, TaskCardAdmin)

@@ -15,6 +15,8 @@ def create_board(request):
     try:
         with transaction.atomic():
             data = request.data
+            members_emails = data.get("members", [])
+            
             board = Board.objects.create(
                 title=data.get("title"),
                 description=data.get("description", ""),
@@ -22,6 +24,11 @@ def create_board(request):
                 created_by=request.user
             )
             board.members.add(request.user)
+
+            if members_emails:
+                extra_members = User.objects.filter(email__in=members_emails)
+                board.members.add(*extra_members)
+                
             serializer = BoardSerializer(board)
             return Response({"message": "Board created successfully", "Board Data": serializer.data}, status=status.HTTP_201_CREATED)
     except Exception as e:
@@ -137,19 +144,36 @@ def view_board_members(request):
         return Response({"error": "Task Board not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
-# #View for full board details
+#View for full board details
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def get_my_board(request):
+
     try:
         
-        board_id = request.data.get('board_id')
+        filters = request.data
+        board_id = filters.get('board_id')
+        today = timezone.now().date()
+        tomorrow = today + timedelta(days=1)
+        next_week = today + timedelta(weeks=1)
+        month = today + timedelta(days=30)
 
         if not board_id:
-            boards = Board.objects.filter(members=request.user).order_by('-is_starred'  )
+            boards = Board.objects.filter(members=request.user).order_by('-is_starred')
 
+            # Board filters
+            if filters.get('board_title'):
+                boards = boards.filter(title__icontains=filters['board_title'])
+
+            if filters.get('board_description'):
+                boards = boards.filter(description__icontains=filters['board_description'])
+            
+            if filters.get('no_members'):
+                boards = boards.filter(members__isnull=True)
+            
+            boards = boards.distinct()
             serializer = BoardSerializer(boards, many=True)
-            return Response({"Message":"Success","Board data": serializer.data}, status=status.HTTP_200_OK)
+            return Response({"Message": "Successfull", "Board data": serializer.data}, status=status.HTTP_200_OK)
 
         try:
             board = Board.objects.get(board_id=board_id, members=request.user)
@@ -157,62 +181,66 @@ def get_my_board(request):
             return Response({"error": "Board not found"}, status=status.HTTP_404_NOT_FOUND)
 
         members = board.members.all()
-        
         board_data = {
             "board_id": board.board_id,
             "title": board.title,
             "description": board.description,
             "visibility": board.visibility,
-            "created_by":  board.created_by.full_name if board.created_by else "Unknown",
+            "created_by": board.created_by.full_name if board.created_by else "Unknown",
             "created_at": board.created_at.strftime("%d-%m-%Y %H:%M:%S"),
             "updated_by": board.updated_by.full_name if board.updated_by else "Unknown",
             "updated_at": board.updated_at.strftime("%d-%m-%Y %H:%M:%S"),
-            "members": [
-                {   
-                    "user_id": member.user_id,
-                    "full_name": member.full_name
-                }
-                for member in members
-            ],
-
-            "Tasks Cards": [] 
+            "members": [{"user_id": m.user_id, "full_name": m.full_name} for m in members],
+            "Tasks Cards": []
         }
-        
+
         tasks = TaskCard.objects.filter(board=board).select_related('created_by', 'updated_by', 'assigned_to').order_by('-is_starred')
-        
-        # Filter Functionality
-        today = timezone.now().date()
-        tomorrow = today + timedelta(days=1)
-        next_week = today + timedelta(weeks=1)
-        month = today + timedelta(days=30)
-        filters = request.data
 
-        if filters.get('assigned_to_me'):
-             tasks = tasks.filter(assigned_to = request.user)
+        # TaskCard filters
+        if filters.get('assigned_to'):
+            tasks = tasks.filter(assigned_to=request.user)
 
-        if 'complated' in filters:
-             if filters['completed']:
-                  tasks = tasks.filter(status = 'completed')
-             else: tasks = tasks.exclude(status='completed') 
+        if 'completed' in filters:
+            if filters['completed']:
+                tasks = tasks.filter(status='completed')
+            else:
+                tasks = tasks.exclude(status='completed')
+
+        if filters.get('task_title'):
+            tasks = tasks.filter(title__icontains=filters['task_title'])
+
+        if filters.get('task_description'):
+            tasks = tasks.filter(description__icontains=filters['task_description'])
+
+        if filters.get('assigned_to'):
+            tasks = tasks.filter(assigned_to__full_name__icontains=filters['assigned_to'])
+
+        # TaskList filters
+        if filters.get('task_list_title'):
+            tasks = tasks.filter(task_lists__tasklist_title__icontains=filters['task_list_title'])
+
+        if filters.get('task_list_description'):
+            tasks = tasks.filter(task_lists__tasklist_description__icontains=filters['task_list_description'])
 
         if filters.get('no_due'):
-             tasks = tasks.filter(due_date__isnull = True)
+            tasks = tasks.filter(task_lists__due_date__isnull=True)
 
         if filters.get('overdue'):
-             tasks = tasks.filter(due_date__lt=today)
-
+            tasks = tasks.filter(task_lists__due_date__lt=today)
+            
         if filters.get('due_today'):
-            tasks = tasks.filter(due_date=today)
+            tasks = tasks.filter(task_lists__due_date=today)
 
         if filters.get('due_tomorrow'):
-            tasks = tasks.filter(due_date=tomorrow)
+            tasks = tasks.filter(task_lists__due_date=tomorrow)
 
         if filters.get('due_next_week'):
-            tasks = tasks.filter(due_date__range=[next_week, month])
+            tasks = tasks.filter(task_lists__due_date__range=[next_week, month])
 
         if filters.get('due_on_this_month'):
-            tasks = tasks.filter(due_date__month=today.month)
+            tasks = tasks.filter(task_lists__due_date__month=today.month)
 
+        tasks = tasks.distinct()
 
         for task in tasks:
             task_images = TaskImage.objects.filter(task_card=task)
@@ -223,33 +251,22 @@ def get_my_board(request):
                 "Task_id": task.task_id,
                 "Title": task.title,
                 "Description": task.description,
-                "Due_date": task.due_date,
                 "Assigned_to": task.assigned_to.full_name if task.assigned_to else "Unassigned",
                 "Created_by": task.created_by.full_name,
                 "Created_at": task.created_at.strftime("%d-%m-%Y %H:%M:%S"),
-                "Updated_by": task.updated_by.full_name if task.updated_by else "None",   
-                "Updated_at": task.updated_at.strftime("%d-%m-%Y %H:%M:%S"),   
-                "media_files": {
-                    "images": [
-                        {
-                            "id": image.task_image_id,
-                            "file_url": image.task_image.url,
-                        } for image in task_images
-                    ],
-
-                    "attachments": [
-                        {   
-                            "id": attachment.task_attachment_id,
-                            "file_url": attachment.task_attachment.url,
-                        } for attachment in task_attachments
-                    ]
+                "Updated_by": task.updated_by.full_name if task.updated_by else "None",
+                "Updated_at": task.updated_at.strftime("%d-%m-%Y %H:%M:%S"),
+                "Media_files": {
+                    "Images": [{"image_url": image.task_image.url} for image in task_images],
+                    "Attachments": [{"attachment_url": attachment.task_attachment.url} for attachment in task_attachments]
                 },
-                "task_lists": TaskListSerializer(tasks_lists, many=True).data
+                "Task Lists": TaskListSerializer(tasks_lists, many=True).data
             })
 
-        return Response({"message": "User data fatched Successfull", "Taskboard data": board_data}, status=status.HTTP_200_OK)
-    except Board.DoesNotExist:
-        return Response({"error": "Board not found"}, status= status.HTTP_404_NOT_FOUND)
+        return Response({"message": "Successfull", "Taskboard data": board_data}, status=status.HTTP_200_OK)
+    
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # Search Board members.
@@ -258,40 +275,19 @@ def get_my_board(request):
 def search_boards(request):   
     try:
         data = request.data
+        queryset = Board.objects.filter(members = request.user).order_by('-is_starred')
 
-        board_id = data.get('board_id')
-        title = data.get('title','')
-        description = data.get('descriptionitle','')
-        visibility= data.get('visibility','')
-        created_by= data.get('created_by','')
-        updated_by= data.get('updated_by','')
-        members= data.get('members','')
-
-        queryset = Board.objects.filter().order_by('-is_starred')
-
-        if board_id:
-                queryset = queryset.filter(pk=board_id)
-
-        if title:
-                queryset = queryset.filter(title__icontains=title)
-
-        if description:
-                queryset = queryset.filter(description__icontains=description)
-
-        if visibility:
-                queryset = queryset.filter(visibility__icontains=visibility)
-
-        if created_by:
-                queryset = queryset.filter(created_by__icontains=created_by)
-
-        if updated_by:
-                queryset = queryset.filter(updated_by__icontains=updated_by)
-
-        if members:
-                queryset = queryset.filter(members__icontains=members)
+        if data.get('board_id'):
+            queryset = queryset.filter(pk=data['board_id'])
+        if data.get('title'):
+            queryset = queryset.filter(title__icontains=data['title'])
+        if data.get('description'):
+            queryset = queryset.filter(description__icontains=data['description'])
+        if data.get('visibility'):
+            queryset = queryset.filter(visibility__icontains=data['visibility'])
 
         if not queryset.exists():
-                return Response({"message": "No matching Boards found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"message": "No matching Boards found"}, status=status.HTTP_404_NOT_FOUND)
         
         serializer = BoardSerializer(queryset, many=True)
         return Response({"Task Board Data": serializer.data}, status=status.HTTP_200_OK)
@@ -311,3 +307,4 @@ def star_board(request):
         return Response({"message": "Board star status updated", "is_starred": board.is_starred})
     except Board.DoesNotExist:
         return Response({"error": "Board not found"}, status=status.HTTP_404_NOT_FOUND)
+
