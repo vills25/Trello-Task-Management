@@ -175,14 +175,14 @@ def update_task(request):
 
             if "subtasks" in data:
                 subtasks = request.data.get('subtasks', [])
-                for sub in subtasks:
-                    if "tasklist_id" in sub:  
+                for subtask in subtasks:
+                    if "tasklist_id" in subtask:  
                         try:
-                            task_list = TaskList.objects.get(tasklist_id=sub['tasklist_id'], task_card=task)
-                            task_list.tasklist_title = sub.get('tasklist_title', task_list.tasklist_title)
-                            task_list.tasklist_description = sub.get('tasklist_description', task_list.tasklist_description)
-                            task_list.due_date = sub.get('due_date', task_list.due_date)
-                            task_list.is_completed = sub.get('is_completed', task_list.is_completed)
+                            task_list = TaskList.objects.get(tasklist_id=subtask['tasklist_id'], task_card=task)
+                            task_list.tasklist_title = subtask.get('tasklist_title', task_list.tasklist_title)
+                            task_list.tasklist_description = subtask.get('tasklist_description', task_list.tasklist_description)
+                            task_list.due_date = subtask.get('due_date', task_list.due_date)
+                            task_list.is_completed = subtask.get('is_completed', task_list.is_completed)
                             task_list.updated_by = request.user
                             task_list.save()
                         except TaskList.DoesNotExist:
@@ -190,10 +190,10 @@ def update_task(request):
                     else:
                         TaskList.objects.create(
                             task_card=task,
-                            tasklist_title=sub.get('tasklist_title', ''),
-                            tasklist_description=sub.get('tasklist_description', ''),
-                            due_date=sub.get('due_date'),
-                            is_completed=sub.get('is_completed', False),
+                            tasklist_title=subtask.get('tasklist_title', ''),
+                            tasklist_description=subtask.get('tasklist_description', ''),
+                            due_date=subtask.get('due_date'),
+                            is_completed=subtask.get('is_completed', False),
                             created_by=request.user
                         )
 
