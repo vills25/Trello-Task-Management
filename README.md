@@ -235,15 +235,58 @@
 
 ```jason
 {
-    "Task_title": "First Task",
-    "Task_Board": "Rahul's Board",
-    "Description": "This is the First task Description",
-    "Task_Status": "doing",
-    "Assigned_to": "Rahul Patel",
-    "Created_by": "Rahul Patel",
-    "Created_at": "2025-08-02T06:57:04.660190Z",
-    "Updated_by": "Rahul Patel",
-    "Updated_at": "2025-08-02T06:57:04.660190Z"
+    "Task card": [
+        {
+            "is_starred": false,
+            "task_id": 12,
+            "board": 5,
+            "title": "Fiscal Year Closing",
+            "description": "Complete annual financial reporting",
+            "is_completed": "pending",
+            "created_at": "13-08-2025 15:31:45",
+            "created_by": "ryan_scott",
+            "updated_at": "13-08-2025 15:31:45",
+            "assigned_to": {
+                "user_id": 22,
+                "full_name": "Ryan Scott"
+            },
+            "task_lists": [
+                {
+                    "tasklist_id": 16,
+                    "task_card": 12,
+                    "tasklist_title": "Accounts Reconciliation",
+                    "tasklist_description": "Verify all transactions are recorded",
+                    "due_date": "2025-08-19",
+                    "created_at": "13-08-2025 15:31:45",
+                    "created_by": "ryan_scott",
+                    "is_completed": false,
+                    "updated_at": "13-08-2025 15:31:45"
+                },
+                {
+                    "tasklist_id": 17,
+                    "task_card": 12,
+                    "tasklist_title": "Tax Preparation",
+                    "tasklist_description": "Compile documents for accountants",
+                    "due_date": "2025-08-20",
+                    "created_at": "13-08-2025 15:31:45",
+                    "created_by": "ryan_scott",
+                    "is_completed": false,
+                    "updated_at": "13-08-2025 15:31:45"
+                },
+                {
+                    "tasklist_id": 18,
+                    "task_card": 12,
+                    "tasklist_title": "Budget Planning",
+                    "tasklist_description": "Draft next year's department budgets",
+                    "due_date": "2025-12-15",
+                    "created_at": "13-08-2025 15:31:45",
+                    "created_by": "ryan_scott",
+                    "is_completed": false,
+                    "updated_at": "13-08-2025 15:31:45"
+                }
+            ]
+        }
+    ]
 }
 ```
 
