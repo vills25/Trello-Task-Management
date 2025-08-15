@@ -59,8 +59,9 @@ def update_board(request):
                 board.description = data['description']
 
             if 'visibility' in data :
-                board.visibility =  data['visibility']     
-            
+                board.visibility =  data['visibility']   
+
+            board.updated_by = request.user
             board.save()
             serializer = BoardSerializer(board)
             return Response({"message": "Board Updated successfully", "Board Data": serializer.data}, status=status.HTTP_200_OK)

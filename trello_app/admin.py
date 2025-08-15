@@ -1,11 +1,11 @@
 from django.contrib import admin
 from .models import *
 
-admin. site.site_header = "Trello Task Management Admin Corner"
+admin.site.site_header = "Trello Task Management Admin Corner"
 
 class UserAdmin(admin.ModelAdmin):
     list_display = ('username', 'email', 'is_superuser', 'is_active')
-    search_fields = ['username']
+    search_fields = ['username', 'email', 'full_name']
 
 class BoardAdmin(admin.ModelAdmin):
     list_display = ('board_id', 'title', 'visibility', 'created_at')

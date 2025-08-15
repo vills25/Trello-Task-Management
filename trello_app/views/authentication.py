@@ -80,7 +80,7 @@ def generate_otp():
 # Send Email
 def send_otp_email(user_email, otp):
     subject = "TRELLO App OTP for reset password"
-    message = f"Hello from TRELLO Task Management App.\n This is OTP for reset your password: {otp}"
+    message = f"Hello from TRELLO Task Management App.\n This is OTP for reset your password: {otp} \n This OTP will Expire in 10 minutes"
     from_email = 'vishalsohaliya25@gmail.com'
     recipient_list = [user_email]
     send_mail(subject, message, from_email, recipient_list)

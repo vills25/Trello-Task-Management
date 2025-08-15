@@ -6,7 +6,6 @@ from django.db import transaction
 from trello_app.models import User, Board,TaskCard, TaskAttachment, TaskImage, TaskList
 from trello_app.serializers import TaskCardSerializer
 
-
 # Search Task Cards    
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -42,7 +41,7 @@ def search_tasks(request):
 
         if not queryset.exists():
                 return Response({"message": "No matching Tasks found"}, status=status.HTTP_404_NOT_FOUND)
-
+        
         serializer = TaskCardSerializer(queryset, many=True)
         return Response({"Task card": serializer.data}, status=status.HTTP_200_OK)
 
@@ -78,7 +77,7 @@ def create_task(request):
             except User.DoesNotExist:
                 return Response({"error": "Assigned user does not exist"}, status=status.HTTP_400_BAD_REQUEST)
         
-        valid_status = ["pending", "doing", "complated"]
+        valid_status = ["pending", "doing", "Completed"]
         is_completed = data.get("is_completed", "pending")
 
         if is_completed not in valid_status:
@@ -87,7 +86,7 @@ def create_task(request):
         with transaction.atomic():
             task = TaskCard.objects.create(
                 board=board,
-                title=data.get("title"),
+                title=data.get("title"), 
                 description=data.get("description"),
                 is_completed=is_completed,
                 created_by=request.user,
@@ -138,7 +137,7 @@ def update_task(request):
 
     task_image = TaskImage.objects.filter(task_card=task).first()
     task_attachment = TaskAttachment.objects.filter(task_card=task).first()
-
+    
     try:
         with transaction.atomic():   
 
@@ -184,6 +183,7 @@ def update_task(request):
                             task_list.due_date = subtask.get('due_date', task_list.due_date)
                             task_list.is_completed = subtask.get('is_completed', task_list.is_completed)
                             task_list.updated_by = request.user
+
                             task_list.save()
                         except TaskList.DoesNotExist:
                             continue
@@ -196,7 +196,7 @@ def update_task(request):
                             is_completed=subtask.get('is_completed', False),
                             created_by=request.user
                         )
-
+            task.updated_by = request.user
             task.save()
             serializer = TaskCardSerializer(task)
             return Response({"message": "Task updated successfully", "Updated task Details":serializer.data}, status=status.HTTP_200_OK)
