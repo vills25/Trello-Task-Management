@@ -225,7 +225,7 @@ def view_my_profile(request):
     try:
         if not user:
             return Response({"User Not Found or Not Exist!"}, status= status.HTTP_404_NOT_FOUND)
-        serializer = UserSerializer(user, many=True)
+        serializer = UserSerializer(user)
         return Response({"Users Data": serializer.data}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({"error":str(e)}, status=status.HTTP_400_BAD_REQUEST)

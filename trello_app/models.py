@@ -58,7 +58,6 @@ class TaskCard(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name='task_updated_by')
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='task_created_by')
-    assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_tasks')
     is_starred = models.BooleanField(default=False)
 
     def __str__(self):
@@ -75,6 +74,7 @@ class TaskList(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="list_created_by")
     updated_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name="list_updated_by")
+    assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_tasks')
 
     def __str__(self):
         return self.tasklist_title

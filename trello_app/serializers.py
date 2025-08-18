@@ -17,22 +17,22 @@ class ForgotPasswordOTPSerializer(serializers.ModelSerializer):
         fields = ['user', 'otp','created_at']
 
 class TaskListSerializer(serializers.ModelSerializer):
+    assigned_to = UserDetailSerializer()
     created_by = serializers.CharField(source='created_by.username', read_only=True)
     updated_by = serializers.CharField(source='updated_by.username', read_only=True)
 
     class Meta:
         model = TaskList
-        fields = ['tasklist_id', 'task_card', 'tasklist_title', 'tasklist_description','due_date','created_at','created_by', 'is_completed','updated_at', 'updated_by']
+        fields = ['tasklist_id', 'task_card', 'tasklist_title', 'tasklist_description','due_date','created_at','created_by', 'is_completed','updated_at', 'updated_by', 'assigned_to']
 
 class TaskCardSerializer(serializers.ModelSerializer):
-    assigned_to = UserDetailSerializer()
     task_lists = TaskListSerializer(many=True, read_only=True)
     created_by = serializers.CharField(source='created_by.username', read_only=True)
     updated_by = serializers.CharField(source='updated_by.username', read_only=True)
 
     class Meta:
         model = TaskCard
-        fields = ['is_starred', 'task_id', 'board', 'title','description','is_completed', 'created_at', 'created_by','updated_at', 'updated_by', 'assigned_to', 'task_lists']
+        fields = ['is_starred', 'task_id', 'board', 'title','description','is_completed', 'created_at', 'created_by','updated_at', 'updated_by', 'task_lists']
 
 class BoardSerializer(serializers.ModelSerializer):
     created_by = serializers.CharField(source='created_by.username', read_only=True)

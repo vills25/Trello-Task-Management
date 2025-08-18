@@ -195,11 +195,9 @@ def get_my_board(request):
             "Tasks Cards": []
         }
 
-        tasks = TaskCard.objects.filter(board=board).select_related('created_by', 'updated_by', 'assigned_to').order_by('-is_starred')
+        tasks = TaskCard.objects.filter(board=board).select_related('created_by', 'updated_by').order_by('-is_starred')
 
         # TaskCard filters
-        if filters.get('assigned_to'):
-            tasks = tasks.filter(assigned_to=request.user)
 
         if 'completed' in filters:
             if filters['completed']:
@@ -213,15 +211,15 @@ def get_my_board(request):
         if filters.get('task_description'):
             tasks = tasks.filter(description__icontains=filters['task_description'])
 
-        if filters.get('assigned_to'):
-            tasks = tasks.filter(assigned_to__full_name__icontains=filters['assigned_to'])
-
         # TaskList filters
         if filters.get('task_list_title'):
             tasks = tasks.filter(task_lists__tasklist_title__icontains=filters['task_list_title'])
 
         if filters.get('task_list_description'):
             tasks = tasks.filter(task_lists__tasklist_description__icontains=filters['task_list_description'])
+
+        if filters.get('assigned_to'):
+            tasks = tasks.filter(assigned_to__full_name__icontains=filters['assigned_to'])
 
         if filters.get('no_due'):
             tasks = tasks.filter(task_lists__due_date__isnull=True)
@@ -253,7 +251,6 @@ def get_my_board(request):
                 "Task_id": task.task_id,
                 "Title": task.title,
                 "Description": task.description,
-                "Assigned_to": task.assigned_to.full_name if task.assigned_to else "Unassigned",
                 "Created_by": task.created_by.full_name,
                 "Created_at": task.created_at.strftime("%d-%m-%Y %H:%M:%S"),
                 "Updated_by": task.updated_by.full_name if task.updated_by else "None",

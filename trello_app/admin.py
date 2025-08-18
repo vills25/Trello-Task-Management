@@ -12,12 +12,12 @@ class BoardAdmin(admin.ModelAdmin):
     search_fields = ['board_id', 'title', 'description']
 
 class TaskListAdmin(admin.ModelAdmin):
-    list_display = ('tasklist_id', 'task_card','tasklist_title', 'tasklist_description')
-    search_fields = ['tasklist_id', 'task_card','tasklist_title']
+    list_display = ('tasklist_id', 'task_card','tasklist_title', 'tasklist_description','assigned_to')
+    search_fields = ['tasklist_id', 'task_card','tasklist_title', 'assigned_to']
 
 class TaskCardAdmin(admin.ModelAdmin):
-    list_display = ('task_id', 'board', 'title', 'is_completed', 'assigned_to')
-    search_fields = ['task_id', 'board', 'title','description','is_completed','due_date','created_at', 'created_by','updated_at', 'updated_by', 'assigned_to']
+    list_display = ('task_id', 'board', 'title', 'is_completed')
+    search_fields = ['task_id', 'board', 'title','description','is_completed','due_date','created_at', 'created_by','updated_at', 'updated_by']
 
 class TaskImageAdmin(admin.ModelAdmin):
     list_display = ('task_image_id', 'task_card')

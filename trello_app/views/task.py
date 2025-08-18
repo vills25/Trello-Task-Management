@@ -68,14 +68,6 @@ def create_task(request):
 
         if user not in board.members.all():
             return Response({"error": "You are not a member of this board"}, status=status.HTTP_403_FORBIDDEN)
-
-        assigned_to_id = data.get("assigned_to")
-        assigned_to_user = None
-        if assigned_to_id:
-            try:
-                assigned_to_user = User.objects.get(user_id=assigned_to_id)
-            except User.DoesNotExist:
-                return Response({"error": "Assigned user does not exist"}, status=status.HTTP_400_BAD_REQUEST)
         
         valid_status = ["pending", "doing", "Completed"]
         is_completed = data.get("is_completed", "pending")
@@ -90,7 +82,7 @@ def create_task(request):
                 description=data.get("description"),
                 is_completed=is_completed,
                 created_by=request.user,
-                assigned_to=assigned_to_user
+                updated_by=request.user,
             )
                 
             for img in request.FILES.getlist("images"):
@@ -99,6 +91,14 @@ def create_task(request):
             for file in request.FILES.getlist("attachments"):
                 TaskAttachment.objects.create(task_card=task, task_attachment=file)
             
+            assigned_to_id = data.get("assigned_to")
+            assigned_to_user = None
+            if assigned_to_id:
+                try:
+                    assigned_to_user = User.objects.get(user_id=assigned_to_id)
+                except User.DoesNotExist:
+                    return Response({"error": "Assigned user does not exist"}, status=status.HTTP_400_BAD_REQUEST)
+
             subtasks = data.get('task_lists', [])
             for sub in subtasks:
                 if sub.get("tasklist_title") and sub.get("tasklist_description"):
@@ -107,7 +107,10 @@ def create_task(request):
                             tasklist_title=sub.get("tasklist_title"),
                             tasklist_description=sub.get("tasklist_description"),
                             due_date=sub.get("due_date"),
+                            is_completed=sub.get("is_completed", False),
+                            assigned_to=assigned_to_user,
                             created_by=request.user,
+                            updated_by=request.user
                         )
             
             return Response({"message": "Task created successfully", "task_id": task.task_id}, status= status.HTTP_201_CREATED)
@@ -146,17 +149,6 @@ def update_task(request):
             
             if 'description' in data:
                 task.description = data['description']
-
-            if 'assigned_to' in data:
-                assigned_to = data["assigned_to"]
-                if assigned_to:
-                    try:
-                        assigned_user_upd = User.objects.get(user_id=assigned_to)
-                        task.assigned_to = assigned_user_upd
-                    except User.DoesNotExist:
-                        return Response({"error": "Assigned user not found"}, status=status.HTTP_404_NOT_FOUND)
-                else:
-                    task.assigned_to = None
             
             if "image" in request.FILES:
                 if task_image:
@@ -183,7 +175,14 @@ def update_task(request):
                             task_list.due_date = subtask.get('due_date', task_list.due_date)
                             task_list.is_completed = subtask.get('is_completed', task_list.is_completed)
                             task_list.updated_by = request.user
-
+                            task_list.assigned_to = subtask.get('assigned_to', task_list.assigned_to)
+                            if subtask.get('assigned_to'):
+                                try:
+                                    assigned_user = User.objects.get(user_id=subtask['assigned_to'])
+                                    task_list.assigned_to = assigned_user
+                                except User.DoesNotExist:
+                                    return Response({"error": "Assigned user not found"}, status=status.HTTP_404_NOT_FOUND)
+                                
                             task_list.save()
                         except TaskList.DoesNotExist:
                             continue
@@ -194,6 +193,7 @@ def update_task(request):
                             tasklist_description=subtask.get('tasklist_description', ''),
                             due_date=subtask.get('due_date'),
                             is_completed=subtask.get('is_completed', False),
+                            assigned_to=subtask.get('assigned_to', None),
                             created_by=request.user
                         )
             task.updated_by = request.user
