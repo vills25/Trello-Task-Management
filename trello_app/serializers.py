@@ -23,7 +23,7 @@ class TaskListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TaskList
-        fields = ['tasklist_id', 'task_card', 'tasklist_title', 'tasklist_description','due_date','created_at','created_by', 'is_completed','updated_at', 'updated_by', 'assigned_to']
+        fields = ['tasklist_id', 'task_card', 'tasklist_title', 'tasklist_description','priority','label_color','start_date','due_date','created_at','created_by', 'is_completed','updated_at', 'updated_by', 'assigned_to']
 
 class TaskCardSerializer(serializers.ModelSerializer):
     task_lists = TaskListSerializer(many=True, read_only=True)

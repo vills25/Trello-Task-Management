@@ -106,6 +106,9 @@ def create_task(request):
                             task_card=task,
                             tasklist_title=sub.get("tasklist_title"),
                             tasklist_description=sub.get("tasklist_description"),
+                            priority=sub.get("priority"),
+                            label_color=sub.get("label_color"),
+                            start_date=sub.get("start_date"),
                             due_date=sub.get("due_date"),
                             is_completed=sub.get("is_completed", False),
                             assigned_to=assigned_to_user,
@@ -131,47 +134,51 @@ def update_task(request):
         return Response({"error": "task_id is required"}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        task = TaskCard.objects.get(task_id=task_id)
+        task_c = TaskCard.objects.get(task_id=task_id)
     except TaskCard.DoesNotExist:
         return Response({"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
 
-    if request.user != task.created_by:
+    if request.user != task_c.created_by:
         return Response({"error": "You cannot edit this task"}, status=status.HTTP_403_FORBIDDEN)
 
-    task_image = TaskImage.objects.filter(task_card=task).first()
-    task_attachment = TaskAttachment.objects.filter(task_card=task).first()
-    
+    task_image = TaskImage.objects.filter(task_card=task_c).first()
+    task_attachment = TaskAttachment.objects.filter(task_card=task_c).first()
+    print("--------------------",request.data)
     try:
-        with transaction.atomic():   
+        with transaction.atomic():  
+            print("-----------")
 
             if 'title' in data:
-                task.title = data['title']
+                task_c.title = data['title']
             
             if 'description' in data:
-                task.description = data['description']
+                task_c.description = data['description']
             
             if "image" in request.FILES:
                 if task_image:
                     task_image. task_image = request.FILES["image"]
                     task_image.save()
                 else:
-                    TaskImage.objects.create(task=task, image=request.FILES["image"])
+                    TaskImage.objects.create(task=task_c, image=request.FILES["image"])
 
             if "attachment" in request.FILES:
                 if task_attachment:
                     task_attachment. task_attachment = request.FILES["attachment"]
                     task_attachment.save()
                 else:
-                    TaskAttachment.objects.create(task=task, file=request.FILES["attachment"])
+                    TaskAttachment.objects.create(task=task_c, file=request.FILES["attachment"])
 
             if "subtasks" in data:
                 subtasks = request.data.get('subtasks', [])
                 for subtask in subtasks:
                     if "tasklist_id" in subtask:  
                         try:
-                            task_list = TaskList.objects.get(tasklist_id=subtask['tasklist_id'], task_card=task)
+                            task_list = TaskList.objects.get(tasklist_id=subtask['tasklist_id'], task_card=task_c)
                             task_list.tasklist_title = subtask.get('tasklist_title', task_list.tasklist_title)
                             task_list.tasklist_description = subtask.get('tasklist_description', task_list.tasklist_description)
+                            task_list.priority = subtask.get('priority', task_list.priority)
+                            task_list.label_color = subtask.get('label_color', task_list.label_color)
+                            task_list.start_date = subtask.get('start_date', task_list.start_date)
                             task_list.due_date = subtask.get('due_date', task_list.due_date)
                             task_list.is_completed = subtask.get('is_completed', task_list.is_completed)
                             task_list.updated_by = request.user
@@ -188,18 +195,21 @@ def update_task(request):
                             continue
                     else:
                         TaskList.objects.create(
-                            task_card=task,
+                            task_card=task_c,
                             tasklist_title=subtask.get('tasklist_title', ''),
                             tasklist_description=subtask.get('tasklist_description', ''),
+                            priority = subtask.get('priority', ''),
+                            label_color = subtask.get('label_color', ''),
+                            start_date = subtask.get('start_date', ''),
                             due_date=subtask.get('due_date'),
                             is_completed=subtask.get('is_completed', False),
                             assigned_to=subtask.get('assigned_to', None),
                             created_by=request.user
                         )
-            task.updated_by = request.user
-            task.save()
-            serializer = TaskCardSerializer(task, many = True)
-            return Response({"message": "Task updated successfully", "Updated task Details":serializer.data}, status=status.HTTP_200_OK)
+            task_c.updated_by = request.user
+            task_c.save() 
+            serializer = TaskCardSerializer(task_c, many = True)
+            return Response({"message": "Task updated successfully", "Updated task Details":serializer.data}, status=status.HTTP_200_OK)  
 
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

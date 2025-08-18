@@ -64,10 +64,15 @@ class TaskCard(models.Model):
         return self.title
 
 class TaskList(models.Model):
+    PRIORITY_CHOICES = [("low", "Low"), ("medium", "Medium"), ("high", "High")]
+    COLOR_CHOICES = [("green", "Green"), ("yellow", "Yellow"), ("orange", "Orange"), ("red", "Red")]
     tasklist_id = models.AutoField(primary_key=True)
     task_card = models.ForeignKey(TaskCard, on_delete=models.CASCADE, related_name="task_lists")
     tasklist_title = models.CharField(max_length=200)
     tasklist_description = models.TextField(blank=True)
+    priority = models.CharField(max_length=10, default="low")
+    label_color = models.CharField(max_length=20, default="green")
+    start_date = models.DateField(blank=True, null=True)
     due_date = models.DateField(blank=True, null=True)
     is_completed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

@@ -20,7 +20,7 @@ class TaskCardAdmin(admin.ModelAdmin):
     search_fields = ['task_id', 'board', 'title','description','is_completed','due_date','created_at', 'created_by','updated_at', 'updated_by']
 
 class TaskImageAdmin(admin.ModelAdmin):
-    list_display = ('task_image_id', 'task_card')
+    list_display = ('task_image_id', 'task_card', 'task_image')
 
 class TaskAttachmentAdmin(admin.ModelAdmin):
     list_display = ('task_attachment_id', 'task_card', 'task_attachment')
