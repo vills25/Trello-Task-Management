@@ -29,7 +29,7 @@ def create_board(request):
                 extra_members = User.objects.filter(email__in=members_emails)
                 board.members.add(*extra_members)
                 
-            serializer = BoardSerializer(board)
+            serializer = BoardSerializer(board, many = True)
             return Response({"message": "Board created successfully", "Board Data": serializer.data}, status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -63,7 +63,7 @@ def update_board(request):
 
             board.updated_by = request.user
             board.save()
-            serializer = BoardSerializer(board)
+            serializer = BoardSerializer(board, many = True)
             return Response({"message": "Board Updated successfully", "Board Data": serializer.data}, status=status.HTTP_200_OK)
          
     except Board.DoesNotExist:
@@ -203,9 +203,9 @@ def get_my_board(request):
 
         if 'completed' in filters:
             if filters['completed']:
-                tasks = tasks.filter(status='completed')
+                tasks = tasks.filter(is_completed='completed')
             else:
-                tasks = tasks.exclude(status='completed')
+                tasks = tasks.exclude(is_completed='completed')
 
         if filters.get('task_title'):
             tasks = tasks.filter(title__icontains=filters['task_title'])

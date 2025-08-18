@@ -34,7 +34,7 @@ def search_tasks(request):
                 queryset = queryset.filter(description__icontains=description)
 
         if created_by:
-                queryset = queryset.filter(created_by__icontains=created_by)
+                queryset =  queryset.filter(created_by__username__icontains=created_by) | queryset.filter(created_by__full_name__icontains=created_by)
 
         if is_completed:
                 queryset = queryset.filter(is_completed__icontains=is_completed)
@@ -109,7 +109,7 @@ def create_task(request):
                             due_date=sub.get("due_date"),
                             created_by=request.user,
                         )
-
+            
             return Response({"message": "Task created successfully", "task_id": task.task_id}, status= status.HTTP_201_CREATED)
 
     except Exception as e:
@@ -198,12 +198,12 @@ def update_task(request):
                         )
             task.updated_by = request.user
             task.save()
-            serializer = TaskCardSerializer(task)
+            serializer = TaskCardSerializer(task, many = True)
             return Response({"message": "Task updated successfully", "Updated task Details":serializer.data}, status=status.HTTP_200_OK)
 
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    
+        
 # Task Card Delete
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])

@@ -50,7 +50,7 @@ class Board(models.Model):
 
 class TaskCard(models.Model):
     task_id = models.AutoField(primary_key=True)    
-    board = models.ForeignKey(Board, on_delete=models.CASCADE)
+    board = models.ForeignKey(Board, on_delete=models.CASCADE, related_name="task_cards")
     title = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     is_completed = models.CharField(max_length=10, choices=(("pending", "Pending"), ("doing", "Doing"), ("completed", "Completed")), default='pending')

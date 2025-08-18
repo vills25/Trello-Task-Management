@@ -156,14 +156,11 @@ def update_profile(request):
                     user_get.profile_image = request.FILES.get('profile_pic', user_get.profile_image)    
 
             user_get.save()
-
+            
+            serializer = UserSerializer(user_get, many=True)
             return Response({
                     "message": "Buyer updated successfully",
-                    "buyer_id": user_get.user_id,
-                    "username": user_get.username,
-                    "full_name": user_get.full_name,
-                    "profile_image": user_get.profile_image.url if user_get.profile_image else None,
-                    "email": user_get.email
+                    "Updated User Data": serializer.data
                 }, status=status.HTTP_200_OK)
 
     except User.DoesNotExist:
@@ -179,6 +176,9 @@ def delete_profile(request):
     if not user_id:
         return Response({"error": "enter User id please"}, status=status.HTTP_400_BAD_REQUEST)
     
+    if not request.user.is_superuser and request.user.user_id != int(user_id):
+        return Response({"error": "Not authorized"}, status=status.HTTP_403_FORBIDDEN)
+
     try:
         user = User.objects.get(user_id = user_id)
         user.delete()
@@ -222,11 +222,10 @@ def search_view_all_users(request):
 @permission_classes([IsAuthenticated])
 def view_my_profile(request):
     user = request.user
-    user_data = {
-        "user_id": user.user_id,
-        "username": user.username,
-        "email": user.email,
-        "full_name": user.full_name,
-        "profile_image": user.profile_image.url if user.profile_image else None
-    }
-    return Response({"User Data": user_data}, status=status.HTTP_200_OK)
+    try:
+        if not user:
+            return Response({"User Not Found or Not Exist!"}, status= status.HTTP_404_NOT_FOUND)
+        serializer = UserSerializer(user, many=True)
+        return Response({"Users Data": serializer.data}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({"error":str(e)}, status=status.HTTP_400_BAD_REQUEST)
