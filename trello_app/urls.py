@@ -15,6 +15,7 @@ urlpatterns = [
     path('delete_profile/', delete_profile),
     path('search_view_all_users/', search_view_all_users),
     path('view_my_profile/', view_my_profile),
+    path('show_activity/', show_activity),
     
     # Board Urls
     path('create_board/', create_board),

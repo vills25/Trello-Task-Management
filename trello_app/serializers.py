@@ -58,3 +58,9 @@ class TaskAttachmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = TaskAttachment
         fields = ['task_attachment_id', 'task_card', 'task_attachment', 'uploaded_at', 'uploaded_by', 'updated_at', 'updated_by']
+
+class ActivitySerializer(serializers.ModelSerializer):
+    user = UserDetailSerializer()
+    class Meta:
+        model = Activity
+        fields = ['date_time', 'user', 'Details']

@@ -102,3 +102,13 @@ class TaskAttachment(models.Model):
     uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name='attachment_uploaded_by')
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name='attachment_updated_by')
+
+
+# Class for activity log
+class Activity(models.Model):
+    date_time = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL,null=True, blank=True)
+    Details = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f'{self.user}----{self.date_time}----{self.Details}'

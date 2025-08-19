@@ -9,8 +9,9 @@ from datetime import timedelta
 from django.contrib.auth import authenticate
 from django.core.mail import send_mail
 from trello_app.models import *
-from trello_app.serializers import UserSerializer
+from trello_app.serializers import UserSerializer,ActivitySerializer, UserDetailSerializer
 import random
+
 
 # Register User
 @api_view(['POST'])
@@ -32,11 +33,12 @@ def register_user(request):
                 password=data['password'],
                 full_name = data['full_name'],
             )
-            return Response({"message": "User registered successfully.",
-                            "user_id": user.user_id,
-                            "email": user.email,
-                            "username": user.username,
-                            "full_name": user.full_name}, status=status.HTTP_201_CREATED)
+            activity(request.user, f"{request.user.username} registered, fullname: {user.full_name}")
+
+            serializer = UserDetailSerializer(user)
+            return Response({"status": "success",
+                            "message": "User registered successfully.",
+                            "data": serializer.data}, status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -64,11 +66,13 @@ def login_user(request):
     
     if user:
         refresh = RefreshToken.for_user(user)
+        activity(user, f"{request.user.username} \"{user.username}\" logged in.")
+
         return Response({
-            # "refresh": str(refresh),
             "access": str(refresh.access_token),
             "user": user_data,
         })
+    
     return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
 ###########################################################################
@@ -94,7 +98,9 @@ def forgot_password_sent_email(request):
         otp = generate_otp()
         ForgotPasswordOTP.objects.create(user=user, otp=otp)
         send_otp_email(email, otp)
+        activity(request.user, f"{request.user.username} requested for password reset.")
         return Response({"message": "OTP sent to your email. Please check your Email box!"}, status=status.HTTP_200_OK)
+
     except User.DoesNotExist:
         return Response({"error": "User not exist"}, status= status.HTTP_404_NOT_FOUND)
 
@@ -120,6 +126,7 @@ def reset_password(request):
 
         otp_.is_used = True
         otp_.save()
+        activity(request.user, f"{request.user.username} resetted password, username: {user.username}")
         return Response({"Password reset successful"}, status=status.HTTP_200_OK)
     except User.DoesNotExist:
  
@@ -156,12 +163,9 @@ def update_profile(request):
                     user_get.profile_image = request.FILES.get('profile_pic', user_get.profile_image)    
 
             user_get.save()
-            
+            activity(request.user, f"{request.user.username} updated his profile: {user_get.username}")
             serializer = UserSerializer(user_get, many=True)
-            return Response({
-                    "message": "Buyer updated successfully",
-                    "Updated User Data": serializer.data
-                }, status=status.HTTP_200_OK)
+            return Response({"message": "Buyer updated successfully","Updated User Data": serializer.data}, status=status.HTTP_200_OK)
 
     except User.DoesNotExist:
         return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -182,6 +186,7 @@ def delete_profile(request):
     try:
         user = User.objects.get(user_id = user_id)
         user.delete()
+        activity(request.user, f"{request.user.username} deleted his profile: {user.username}")
         return Response({"message": "User deleted"}, status=status.HTTP_200_OK)
     except User.DoesNotExist:
         return Response({"error": "User not found"}, status= status.HTTP_404_NOT_FOUND)
@@ -213,6 +218,7 @@ def search_view_all_users(request):
             return Response({"message": "No users found matching the results"}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = UserSerializer(users, many=True)
+        activity(request.user, f"{request.user.username} viewed all users")
         return Response({"Users Data": serializer.data}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -226,6 +232,30 @@ def view_my_profile(request):
         if not user:
             return Response({"User Not Found or Not Exist!"}, status= status.HTTP_404_NOT_FOUND)
         serializer = UserSerializer(user)
+        activity(request.user, f"{request.user.username} viewed his profile")
         return Response({"Users Data": serializer.data}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({"error":str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# Function for Log activity
+def activity(user, Details):
+    return Activity.objects.create(user=user, Details=Details) # Entry in DB of user activity only
+
+# Show User Activity
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def show_activity(request):
+    try:
+        user = request.user
+        activity_record = Activity.objects.filter(user=user).order_by("-date_time")
+
+        serializer = ActivitySerializer(activity_record, many=True)
+        return Response({"status": "success","message": "Activity fetched successfully","data": serializer.data},
+                         status=status.HTTP_200_OK)
+    
+    except Activity.DoesNotExist:
+        return Response({"status": "error","message": "No activity found"}, status=status.HTTP_404_NOT_FOUND)
+
+    except Exception as e:
+        return Response({"status": "error","message": str(e)}, status=status.HTTP_400_BAD_REQUEST)

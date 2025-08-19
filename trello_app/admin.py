@@ -2,6 +2,8 @@ from django.contrib import admin
 from .models import *
 
 admin.site.site_header = "Trello Task Management Admin Corner"
+admin.site.site_title = "Trello Task Management"
+admin.site.index_title = "Trello Admin" 
 
 class UserAdmin(admin.ModelAdmin):
     list_display = ('username', 'email', 'is_superuser', 'is_active')
@@ -25,9 +27,13 @@ class TaskImageAdmin(admin.ModelAdmin):
 class TaskAttachmentAdmin(admin.ModelAdmin):
     list_display = ('task_attachment_id', 'task_card', 'task_attachment')
 
+class ActivityAdmin(admin.ModelAdmin):
+    list_display = ('date_time', 'user', 'Details')
+
 admin.site.register(User, UserAdmin)
 admin.site.register(Board, BoardAdmin)
 admin.site.register(TaskList,TaskListAdmin)
 admin.site.register(TaskCard, TaskCardAdmin)
 admin.site.register(TaskAttachment,TaskAttachmentAdmin)
 admin.site.register(TaskImage,TaskImageAdmin )
+admin.site.register(Activity, ActivityAdmin)

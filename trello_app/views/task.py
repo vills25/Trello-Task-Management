@@ -5,6 +5,7 @@ from rest_framework import status
 from django.db import transaction
 from trello_app.models import User, Board,TaskCard, TaskAttachment, TaskImage, TaskList
 from trello_app.serializers import TaskCardSerializer
+from .authentication import activity
 
 # Search Task Cards    
 @api_view(['POST'])
@@ -42,6 +43,7 @@ def search_tasks(request):
         if not queryset.exists():
                 return Response({"message": "No matching Tasks found"}, status=status.HTTP_404_NOT_FOUND)
         
+        activity(request.user, f"{request.user.username} Searched Tasks")
         serializer = TaskCardSerializer(queryset, many=True)
         return Response({"Task card": serializer.data}, status=status.HTTP_200_OK)
 
@@ -98,6 +100,8 @@ def create_task(request):
                     assigned_to_user = User.objects.get(user_id=assigned_to_id)
                 except User.DoesNotExist:
                     return Response({"error": "Assigned user does not exist"}, status=status.HTTP_400_BAD_REQUEST)
+                
+            activity(request.user, f"{request.user.username} created task: {task.title} in board: {board.title}")
 
             subtasks = data.get('task_lists', [])
             for sub in subtasks:
@@ -115,7 +119,7 @@ def create_task(request):
                             created_by=request.user,
                             updated_by=request.user
                         )
-            
+            activity(request.user, f"{request.user.username} created task:: {task.title} with subtasks in board:: {board.title}")
             return Response({"message": "Task created successfully", "task_id": task.task_id}, status= status.HTTP_201_CREATED)
 
     except Exception as e:
@@ -143,10 +147,9 @@ def update_task(request):
 
     task_image = TaskImage.objects.filter(task_card=task_c).first()
     task_attachment = TaskAttachment.objects.filter(task_card=task_c).first()
-    print("--------------------",request.data)
+
     try:
         with transaction.atomic():  
-            print("-----------")
 
             if 'title' in data:
                 task_c.title = data['title']
@@ -156,17 +159,24 @@ def update_task(request):
             
             if "image" in request.FILES:
                 if task_image:
-                    task_image. task_image = request.FILES["image"]
+                    task_image.task_image = request.FILES["image"]
                     task_image.save()
+                    activity(request.user, f"{request.user.username} updated task image for task: {task_c.title} in board: {task_c.board.title}")
                 else:
                     TaskImage.objects.create(task=task_c, image=request.FILES["image"])
+                    activity(request.user, f"{request.user.username} added task image for task: {task_c.title} in board: {task_c.board.title}")
+
+            if "is_completed" in data:
+                task_c.is_completed = data["is_completed"]
 
             if "attachment" in request.FILES:
                 if task_attachment:
-                    task_attachment. task_attachment = request.FILES["attachment"]
+                    task_attachment.task_attachment = request.FILES["attachment"]
                     task_attachment.save()
+                    activity(request.user, f"{request.user.username} updated task attachment for task: {task_c.title} in board: {task_c.board.title}")
                 else:
                     TaskAttachment.objects.create(task=task_c, file=request.FILES["attachment"])
+                    activity(request.user, f"{request.user.username} added task attachment for task: {task_c.title} in board: {task_c.board.title}")
 
             if "subtasks" in data:
                 subtasks = request.data.get('subtasks', [])
@@ -191,6 +201,7 @@ def update_task(request):
                                     return Response({"error": "Assigned user not found"}, status=status.HTTP_404_NOT_FOUND)
                                 
                             task_list.save()
+                            activity(request.user, f"{request.user.username} updated subtask: {task_list.tasklist_title} for task: {task_c.title} in board: {task_c.board.title}")
                         except TaskList.DoesNotExist:
                             continue
                     else:
@@ -206,9 +217,10 @@ def update_task(request):
                             assigned_to=subtask.get('assigned_to', None),
                             created_by=request.user
                         )
-            task_c.updated_by = request.user
-            task_c.save() 
-            serializer = TaskCardSerializer(task_c, many = True)
+
+            task_c.save()
+            activity(request.user, f"{request.user.username} updated task: {task_c.title} in board: {task_c.board.title}")
+            serializer = TaskCardSerializer(task_c)
             return Response({"message": "Task updated successfully", "Updated task Details":serializer.data}, status=status.HTTP_200_OK)  
 
     except Exception as e:
@@ -230,11 +242,12 @@ def delete_task(request):
             return Response({"error": "You cannot delete this task"}, status=status.HTTP_403_FORBIDDEN)
 
         task.delete()
+        activity(request.user, f"{request.user.username} deleted task: {task.title} in board: {task.board.title}")
         return Response({"message": "Task deleted successfully"}, status= status.HTTP_200_OK)
 
     except TaskCard.DoesNotExist:
         return Response({"error": "Task not found"}, status= status.HTTP_404_NOT_FOUND)
-
+ 
 # Give Star To Task
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -244,6 +257,7 @@ def star_task_card(request):
         task = TaskCard.objects.get(task_id=task_id)
         task.is_starred = not task.is_starred
         task.save()
+        activity(request.user, f"{request.user.username} starred task: {task.title} in board: {task.board.title}")
         return Response({"message": "Task star status updated", "is_starred": task.is_starred})
     except TaskCard.DoesNotExist:
         return Response({"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
