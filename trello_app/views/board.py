@@ -3,8 +3,8 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from django.db import transaction
-from trello_app.models import Board, User, TaskCard, TaskAttachment, TaskImage, TaskList
-from trello_app.serializers import BoardSerializer, TaskListSerializer
+from trello_app.models import *
+from trello_app.serializers import *
 from datetime import date, timedelta
 from django.utils import timezone
 from .authentication import activity
@@ -30,8 +30,8 @@ def create_board(request):
                 extra_members = User.objects.filter(email__in=members_emails)
                 board.members.add(*extra_members)
                 
-            serializer = BoardSerializer(board, many = True)
-            activity(request.user, f"{request.user.username} created Board: {board.title}")
+            serializer = BoardSerializer(board)
+            activity(request.user, f"{request.user.full_name} created Board: {board.title}")
             return Response({"message": "Board created successfully", "Board Data": serializer.data}, status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -56,7 +56,7 @@ def update_board(request):
 
             if 'title' in data:
                 board.title = data['title'] 
-       
+    
             if 'description' in data:
                 board.description = data['description']
 
@@ -65,7 +65,7 @@ def update_board(request):
 
             board.updated_by = request.user
             board.save()
-            activity(request.user, f'{request.user.username} updated board: {board.title}')
+            activity(request.user, f'{request.user.full_name} updated board: {board.title}')
             serializer = BoardSerializer(board, many = True)
             return Response({"message": "Board Updated successfully", "Board Data": serializer.data}, status=status.HTTP_200_OK)
          
@@ -82,7 +82,7 @@ def delete_board(request):
         board_id = request.data.get("board_id")
         board = Board.objects.get(board_id=board_id, created_by=request.user)
         board.delete()
-        activity(request.user, f"{request.user.username} Deleted Board : {board.title}")
+        activity(request.user, f"{request.user.full_name} Deleted Board : {board.title}")
         return Response({"message": "Board deleted successfully"}, status=status.HTTP_200_OK)
     except Board.DoesNotExist:
         return Response({"error": "Board not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -122,7 +122,7 @@ def remove_member_from_board(request):
 
         board.members.remove(user)
 
-        activity(request.user, f"{request.user.username} removed {user.username} from board, title: {board.title}")
+        activity(request.user, f"{request.user.full_name} removed {user.username} from board, title: {board.title}")
         
         return Response({"message": f"{user.username} removed from board"}, status=status.HTTP_200_OK)
     except Board.DoesNotExist:
@@ -148,7 +148,7 @@ def view_board_members(request):
                 "username": member.username,
                 "email": member.email
             })
-        activity(request.user, f"{request.user.username} viewed members of board, Title: {board.title}")
+        activity(request.user, f"{request.user.full_name} viewed members of board, Title: {board.title}")
         return Response({"Members in your Task Board":members_data}, status=status.HTTP_200_OK)
     except Board.DoesNotExist:
         return Response({"error": "Task Board not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -159,11 +159,10 @@ def view_board_members(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def get_my_board(request):
-
+  
     try:
         
-        filters = request.data
-        board_id = filters.get('board_id')
+        board_id = request.data.get('board_id')
         today = timezone.now().date()
         tomorrow = today + timedelta(days=1)
         next_week = today + timedelta(weeks=1)
@@ -173,17 +172,17 @@ def get_my_board(request):
             boards = Board.objects.filter(members=request.user).order_by('-is_starred')
 
             # Board filters
-            if filters.get('board_title'):
-                boards = boards.filter(title__icontains=filters['board_title'])
+            if request.data.get('board_title'):
+                boards = boards.filter(title__icontains=request.data['board_title'])
 
-            if filters.get('board_description'):
-                boards = boards.filter(description__icontains=filters['board_description'])
-            
-            if filters.get('no_members'):
+            if request.data.get('board_description'):
+                boards = boards.filter(description__icontains=request.data['board_description'])
+
+            if request.data.get('no_members'):
                 boards = boards.filter(members__isnull=True)
             
             boards = boards.distinct()
-            activity(request.user, f"{request.user.username} viewed boards")
+            activity(request.user, f"{request.user.full_name} viewed boards")
 
             serializer = BoardSerializer(boards, many=True)
             return Response({"Message": "Successfull", "Board data": serializer.data}, status=status.HTTP_200_OK)
@@ -194,6 +193,7 @@ def get_my_board(request):
             return Response({"error": "Board not found"}, status=status.HTTP_404_NOT_FOUND)
 
         members = board.members.all()
+        
         board_data = {
             "board_id": board.board_id,
             "title": board.title,
@@ -206,49 +206,49 @@ def get_my_board(request):
             "members": [{"user_id": m.user_id, "full_name": m.full_name} for m in members],
             "Tasks Cards": []
         }
- 
+
         tasks = TaskCard.objects.filter(board=board).select_related('created_by', 'updated_by').order_by('-is_starred')
 
         # TaskCard filters
 
-        if 'completed' in filters:
-            if filters['completed']:
+        if 'completed' in request.data:
+            if request.data['completed']:
                 tasks = tasks.filter(is_completed='completed')
             else:
                 tasks = tasks.exclude(is_completed='completed')
 
-        if filters.get('task_title'):
-            tasks = tasks.filter(title__icontains=filters['task_title'])
+        if request.data.get('task_title'):
+            tasks = tasks.filter(title__icontains=request.data['task_title'])
 
-        if filters.get('task_description'):
-            tasks = tasks.filter(description__icontains=filters['task_description'])
+        if request.data.get('task_description'):
+            tasks = tasks.filter(description__icontains=request.data['task_description'])
 
         # TaskList filters
-        if filters.get('task_list_title'):
-            tasks = tasks.filter(task_lists__tasklist_title__icontains=filters['task_list_title'])
+        if request.data.get('task_list_title'):
+            tasks = tasks.filter(task_lists__tasklist_title__icontains=request.data['task_list_title'])
 
-        if filters.get('task_list_description'):
-            tasks = tasks.filter(task_lists__tasklist_description__icontains=filters['task_list_description'])
+        if request.data.get('task_list_description'):
+            tasks = tasks.filter(task_lists__tasklist_description__icontains=request.data['task_list_description'])
 
-        if filters.get('assigned_to'):
-            tasks = tasks.filter(assigned_to__full_name__icontains=filters['assigned_to'])
+        if request.data.get('assigned_to'):
+            tasks = tasks.filter(assigned_to__full_name__icontains=request.data['assigned_to'])
 
-        if filters.get('no_due'):
+        if request.data.get('no_due'):
             tasks = tasks.filter(task_lists__due_date__isnull=True)
 
-        if filters.get('overdue'):
+        if request.data.get('overdue'):
             tasks = tasks.filter(task_lists__due_date__lt=today)
-            
-        if filters.get('due_today'):
+
+        if request.data.get('due_today'):
             tasks = tasks.filter(task_lists__due_date=today)
 
-        if filters.get('due_tomorrow'):
+        if request.data.get('due_tomorrow'):
             tasks = tasks.filter(task_lists__due_date=tomorrow)
 
-        if filters.get('due_next_week'):
+        if request.data.get('due_next_week'):
             tasks = tasks.filter(task_lists__due_date__range=[next_week, month])
 
-        if filters.get('due_on_this_month'):
+        if request.data.get('due_on_this_month'):
             tasks = tasks.filter(task_lists__due_date__month=today.month)
         
         tasks = tasks.distinct()
@@ -258,7 +258,9 @@ def get_my_board(request):
             task_images = TaskImage.objects.filter(task_card=task)
             task_attachments = TaskAttachment.objects.filter(task_card=task)
             tasks_lists = TaskList.objects.filter(task_card=task)
-
+            comments = Comment.objects.filter(user= request.user)
+            print("===============================comments=",comments)
+            
             board_data["Tasks Cards"].append({
                 "Task_id": task.task_id,
                 "Title": task.title,
@@ -272,9 +274,11 @@ def get_my_board(request):
                     "Images": [{"image_url": f'http://{url_path}{image.task_image.url}'} for image in task_images],
                     "Attachments": [{"attachment_url": f'http://{url_path}{attachment.task_attachment.url}'} for attachment in task_attachments]
                 },
-                "Task Lists": TaskListSerializer(tasks_lists, many=True).data
+                "Task Lists": TaskListSerializer(tasks_lists, many=True).data,
+                # "Comments": CommentDetailSerializer(comments, many=True).data
+
             })
-        activity(request.user, f"{request.user.username} performed action on board, board title: {board.title}")
+        activity(request.user, f"{request.user.full_name} performed action on board, board title: {board.title}")
         return Response({"message": "Successfull", "Taskboard data": board_data}, status=status.HTTP_200_OK)
     
     except Exception as e:
@@ -301,7 +305,7 @@ def search_boards(request):
         if not queryset.exists():
             return Response({"message": "No matching Boards found"}, status=status.HTTP_404_NOT_FOUND)
 
-        activity(request.user, f"{request.user.username} Searched Boards")
+        activity(request.user, f"{request.user.full_name} Searched Boards")
         serializer = BoardSerializer(queryset, many=True)
         return Response({"Task Board Data": serializer.data}, status=status.HTTP_200_OK)
     
@@ -317,7 +321,7 @@ def star_board(request):
         board = Board.objects.get(board_id=board_id, members=request.user)
         board.is_starred = not board.is_starred
         board.save()
-        activity(request.user, f"{request.user.username} updated Star status of Board: {board.title} - {'Starred' if board.is_starred else 'Unstarred'}")
+        activity(request.user, f"{request.user.full_name} updated Star status of Board: {board.title} - {'Starred' if board.is_starred else 'Unstarred'}")
         return Response({"message": "Board star status updated", "is_starred": board.is_starred})
     except Board.DoesNotExist:
         return Response({"error": "Board not found"}, status=status.HTTP_404_NOT_FOUND)

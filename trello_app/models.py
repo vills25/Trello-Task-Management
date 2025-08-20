@@ -112,3 +112,14 @@ class Activity(models.Model):
 
     def __str__(self):
         return f'{self.user}----{self.date_time}----{self.Details}'
+
+# Class for Comment
+class Comment(models.Model):
+    comment_id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    task_list = models.ForeignKey(TaskList, on_delete=models.CASCADE, related_name="comments",)
+    comment_text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name='comment_created_by')
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name='comment_updated_by')

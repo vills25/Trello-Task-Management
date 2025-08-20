@@ -9,7 +9,7 @@ from datetime import timedelta
 from django.contrib.auth import authenticate
 from django.core.mail import send_mail
 from trello_app.models import *
-from trello_app.serializers import UserSerializer,ActivitySerializer, UserDetailSerializer
+from trello_app.serializers import *
 import random
 
 
@@ -33,7 +33,7 @@ def register_user(request):
                 password=data['password'],
                 full_name = data['full_name'],
             )
-            activity(request.user, f"{request.user.username} registered, fullname: {user.full_name}")
+            activity(user, f"username: {user.username} registered, fullname: {user.full_name}")
 
             serializer = UserDetailSerializer(user)
             return Response({"status": "success",
@@ -66,7 +66,7 @@ def login_user(request):
     
     if user:
         refresh = RefreshToken.for_user(user)
-        activity(user, f"{request.user.username} \"{user.username}\" logged in.")
+        activity(user, f"{user.username} logged in.")
 
         return Response({
             "access": str(refresh.access_token),
@@ -248,7 +248,20 @@ def activity(user, Details):
 def show_activity(request):
     try:
         user = request.user
-        activity_record = Activity.objects.filter(user=user).order_by("-date_time")
+        get_admin_board = Board.objects.filter(created_by=user)
+        
+        if get_admin_board.exists():
+            get_members = []
+
+            for board in get_admin_board:
+                get_members.extend(board.members.values_list("user_id", flat=True))
+
+            get_members.append(user.user_id)
+
+            activity_record = Activity.objects.filter(user_id__in=get_members).order_by("-date_time")
+
+        else:
+            activity_record = Activity.objects.filter(user=user).order_by("-date_time")
 
         serializer = ActivitySerializer(activity_record, many=True)
         return Response({"status": "success","message": "Activity fetched successfully","data": serializer.data},
@@ -259,3 +272,35 @@ def show_activity(request):
 
     except Exception as e:
         return Response({"status": "error","message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+
+# Function for comments
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_comment(request):
+    user = request.user
+    data = request.data
+
+    if not data.get('tasklist_id') or not data.get('comment_text'):
+        return Response({"error": "Task list and comment text required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        task_list = TaskList.objects.get(tasklist_id=data['tasklist_id'])
+        comment = Comment.objects.create(
+            user=user,
+            task_list=task_list,
+            comment_text=data['comment_text'],
+            created_by=request.user,
+            updated_by=request.user
+        )
+
+        activity(user, f"{user.full_name} commented on task list: {task_list.tasklist_title}")
+        serializer = CommentDetailSerializer(comment)
+        return Response({"status": "success", "message": "Comment created successfully", "data": serializer.data}, 
+                        status=status.HTTP_201_CREATED)
+
+    except TaskList.DoesNotExist:
+        return Response({"status": "error", "message": "task list does not exist"}, status=status.HTTP_404_NOT_FOUND)
+    
+    except Exception as e:
+        return Response({"status": "error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)

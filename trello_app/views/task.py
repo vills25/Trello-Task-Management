@@ -3,8 +3,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from django.db import transaction
-from trello_app.models import User, Board,TaskCard, TaskAttachment, TaskImage, TaskList
-from trello_app.serializers import TaskCardSerializer
+from trello_app.models import *
+from trello_app.serializers import *
 from .authentication import activity
 
 # Search Task Cards    
@@ -14,7 +14,7 @@ def search_tasks(request):
     try:
         data = request.data
         queryset = TaskCard.objects.filter(board__members=request.user).order_by('-is_starred')
-
+        
         task_id = data.get('task_id')
         title = data.get('title')
         board = data.get('board','')
@@ -43,9 +43,15 @@ def search_tasks(request):
         if not queryset.exists():
                 return Response({"message": "No matching Tasks found"}, status=status.HTTP_404_NOT_FOUND)
         
-        activity(request.user, f"{request.user.username} Searched Tasks")
-        serializer = TaskCardSerializer(queryset, many=True)
-        return Response({"Task card": serializer.data}, status=status.HTTP_200_OK)
+        task_data = []
+        for task in queryset:
+            task_serialized = dict(TaskCardSerializer(task).data)
+            comments = Comment.objects.filter(task_card=task).select_related("user")
+            task_serialized["Comments"] = CommentDetailSerializer(comments, many=True).data
+            task_data.append(task_serialized)
+
+        activity(request.user, f"{request.user.full_name} Searched Tasks")
+        return Response({"Task card": task_data}, status=status.HTTP_200_OK)
 
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -101,7 +107,7 @@ def create_task(request):
                 except User.DoesNotExist:
                     return Response({"error": "Assigned user does not exist"}, status=status.HTTP_400_BAD_REQUEST)
                 
-            activity(request.user, f"{request.user.username} created task: {task.title} in board: {board.title}")
+            activity(request.user, f"{request.user.full_name} created task: {task.title} in board: {board.title}")
 
             subtasks = data.get('task_lists', [])
             for sub in subtasks:
@@ -119,7 +125,7 @@ def create_task(request):
                             created_by=request.user,
                             updated_by=request.user
                         )
-            activity(request.user, f"{request.user.username} created task:: {task.title} with subtasks in board:: {board.title}")
+            activity(request.user, f"{request.user.full_name} created task:: {task.title} with subtasks in board:: {board.title}")
             return Response({"message": "Task created successfully", "task_id": task.task_id}, status= status.HTTP_201_CREATED)
 
     except Exception as e:
@@ -161,22 +167,22 @@ def update_task(request):
                 if task_image:
                     task_image.task_image = request.FILES["image"]
                     task_image.save()
-                    activity(request.user, f"{request.user.username} updated task image for task: {task_c.title} in board: {task_c.board.title}")
+                    activity(request.user, f"Full_Name: {request.user.full_name}, updated task image>>{task_image.task_image.name} in task: {task_c.title} in board: {task_c.board.title}")
                 else:
                     TaskImage.objects.create(task=task_c, image=request.FILES["image"])
-                    activity(request.user, f"{request.user.username} added task image for task: {task_c.title} in board: {task_c.board.title}")
+                    activity(request.user, f"Full_Name: {request.user.full_name}, added task image>>{request.FILES['image'].name} for task: {task_c.title} in board: {task_c.board.title}")
 
             if "is_completed" in data:
                 task_c.is_completed = data["is_completed"]
-
+                
             if "attachment" in request.FILES:
                 if task_attachment:
                     task_attachment.task_attachment = request.FILES["attachment"]
                     task_attachment.save()
-                    activity(request.user, f"{request.user.username} updated task attachment for task: {task_c.title} in board: {task_c.board.title}")
+                    activity(request.user, f"Full_Name: {request.user.full_name}, updated task attachment>>{task_attachment.task_attachment.name} for task: {task_c.title} in board: {task_c.board.title}")
                 else:
                     TaskAttachment.objects.create(task=task_c, file=request.FILES["attachment"])
-                    activity(request.user, f"{request.user.username} added task attachment for task: {task_c.title} in board: {task_c.board.title}")
+                    activity(request.user, f"Full_Name: {request.user.full_name}, added task attachment>>{request.FILES['attachment'].name} for task: {task_c.title} in board: {task_c.board.title}")
 
             if "subtasks" in data:
                 subtasks = request.data.get('subtasks', [])
@@ -201,7 +207,7 @@ def update_task(request):
                                     return Response({"error": "Assigned user not found"}, status=status.HTTP_404_NOT_FOUND)
                                 
                             task_list.save()
-                            activity(request.user, f"{request.user.username} updated subtask: {task_list.tasklist_title} for task: {task_c.title} in board: {task_c.board.title}")
+                            activity(request.user, f"Full_Name: {request.user.full_name}, updated subtask: {task_list.tasklist_title} for task: {task_c.title} in board: {task_c.board.title}")
                         except TaskList.DoesNotExist:
                             continue
                     else:
@@ -219,7 +225,7 @@ def update_task(request):
                         )
 
             task_c.save()
-            activity(request.user, f"{request.user.username} updated task: {task_c.title} in board: {task_c.board.title}")
+            activity(request.user, f"Full_Name: {request.user.full_name}, updated task: {task_c.title} in board: {task_c.board.title}")
             serializer = TaskCardSerializer(task_c)
             return Response({"message": "Task updated successfully", "Updated task Details":serializer.data}, status=status.HTTP_200_OK)  
 
@@ -242,7 +248,7 @@ def delete_task(request):
             return Response({"error": "You cannot delete this task"}, status=status.HTTP_403_FORBIDDEN)
 
         task.delete()
-        activity(request.user, f"{request.user.username} deleted task: {task.title} in board: {task.board.title}")
+        activity(request.user, f"{request.user.full_name} deleted task: {task.title} in board: {task.board.title}")
         return Response({"message": "Task deleted successfully"}, status= status.HTTP_200_OK)
 
     except TaskCard.DoesNotExist:
@@ -257,7 +263,7 @@ def star_task_card(request):
         task = TaskCard.objects.get(task_id=task_id)
         task.is_starred = not task.is_starred
         task.save()
-        activity(request.user, f"{request.user.username} starred task: {task.title} in board: {task.board.title}")
+        activity(request.user, f"{request.user.full_name} starred task: {task.title} in board: {task.board.title}")
         return Response({"message": "Task star status updated", "is_starred": task.is_starred})
     except TaskCard.DoesNotExist:
         return Response({"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND)

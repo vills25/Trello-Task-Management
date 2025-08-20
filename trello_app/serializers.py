@@ -16,14 +16,31 @@ class ForgotPasswordOTPSerializer(serializers.ModelSerializer):
         model = ForgotPasswordOTP
         fields = ['user', 'otp','created_at']
 
+class CommentDetailSerializer(serializers.ModelSerializer):
+    user = UserDetailSerializer()
+
+    class Meta:
+        model = Comment
+        fields = ['user', 'comment_text', 'created_at']
+
 class TaskListSerializer(serializers.ModelSerializer):
     assigned_to = UserDetailSerializer()
     created_by = serializers.CharField(source='created_by.username', read_only=True)
-    updated_by = serializers.CharField(source='updated_by.username', read_only=True)
+    updated_by = serializers.CharField()
+    comments = CommentDetailSerializer(many=True, read_only=True)
 
     class Meta:
         model = TaskList
-        fields = ['tasklist_id', 'task_card', 'tasklist_title', 'tasklist_description','priority','label_color','start_date','due_date','created_at','created_by', 'is_completed','updated_at', 'updated_by', 'assigned_to']
+        fields = ['tasklist_id', 'task_card', 'tasklist_title', 'tasklist_description','priority','label_color','start_date','due_date',
+                  'created_at','created_by', 'updated_at','is_completed', 'updated_by', 'comments','assigned_to']
+
+class CommentSerializer(serializers.ModelSerializer):
+    user = UserDetailSerializer()
+    task_list = TaskListSerializer()
+
+    class Meta:
+        model = Comment
+        fields = ['comment_id', 'user','task_list', 'comment_text', 'created_at', 'created_by', 'updated_at', 'updated_by']
 
 class TaskCardSerializer(serializers.ModelSerializer):
     task_lists = TaskListSerializer(many=True, read_only=True)
@@ -60,7 +77,7 @@ class TaskAttachmentSerializer(serializers.ModelSerializer):
         fields = ['task_attachment_id', 'task_card', 'task_attachment', 'uploaded_at', 'uploaded_by', 'updated_at', 'updated_by']
 
 class ActivitySerializer(serializers.ModelSerializer):
-    user = UserDetailSerializer()
+
     class Meta:
         model = Activity
-        fields = ['date_time', 'user', 'Details']
+        fields = ['date_time', 'Details']

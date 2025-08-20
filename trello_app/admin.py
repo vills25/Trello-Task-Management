@@ -30,6 +30,9 @@ class TaskAttachmentAdmin(admin.ModelAdmin):
 class ActivityAdmin(admin.ModelAdmin):
     list_display = ('date_time', 'user', 'Details')
 
+class CommentAdmin(admin.ModelAdmin):
+    list_display = ('comment_id', 'user', 'task_list', 'comment_text', 'created_at')
+
 admin.site.register(User, UserAdmin)
 admin.site.register(Board, BoardAdmin)
 admin.site.register(TaskList,TaskListAdmin)
@@ -37,3 +40,4 @@ admin.site.register(TaskCard, TaskCardAdmin)
 admin.site.register(TaskAttachment,TaskAttachmentAdmin)
 admin.site.register(TaskImage,TaskImageAdmin )
 admin.site.register(Activity, ActivityAdmin)
+admin.site.register(Comment, CommentAdmin)
