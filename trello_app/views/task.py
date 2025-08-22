@@ -21,6 +21,7 @@ def search_tasks(request):
         description = data.get('description','')
         created_by= data.get('created_by','')
         is_completed= data.get('is_completed','')
+        is_starred = data.get('is_starred','')
         
         if task_id:
                 queryset = queryset.filter(pk=task_id)
@@ -40,22 +41,21 @@ def search_tasks(request):
         if is_completed:
                 queryset = queryset.filter(is_completed__icontains=is_completed)
 
+        if is_starred:
+                queryset = queryset.filter(is_starred__icontains=is_starred)
+
         if not queryset.exists():
                 return Response({"message": "No matching Tasks found"}, status=status.HTTP_404_NOT_FOUND)
         
-        task_data = []
-        for task in queryset:
-            task_serialized = dict(TaskCardSerializer(task).data)
-            comments = Comment.objects.filter(task_card=task).select_related("user")
-            task_serialized["Comments"] = CommentDetailSerializer(comments, many=True).data
-            task_data.append(task_serialized)
-
         activity(request.user, f"{request.user.full_name} Searched Tasks")
-        return Response({"Task card": task_data}, status=status.HTTP_200_OK)
+        serializer = TaskCardSerializer(queryset, many=True)
+        return Response({"Task card": serializer.data}, status=status.HTTP_200_OK)
 
+    except TaskCard.DoesNotExist:
+        return Response({"status":"Task not found"}, status=status.HTTP_404_NOT_FOUND)
+    
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
 
 # Create Task Card
 @api_view(['POST'])
@@ -131,7 +131,6 @@ def create_task(request):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-
 # Update Task Card
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
@@ -184,48 +183,9 @@ def update_task(request):
                     TaskAttachment.objects.create(task=task_c, file=request.FILES["attachment"])
                     activity(request.user, f"Full_Name: {request.user.full_name}, added task attachment>>{request.FILES['attachment'].name} for task: {task_c.title} in board: {task_c.board.title}")
 
-            if "subtasks" in data:
-                subtasks = request.data.get('subtasks', [])
-                for subtask in subtasks:
-                    if "tasklist_id" in subtask:  
-                        try:
-                            task_list = TaskList.objects.get(tasklist_id=subtask['tasklist_id'], task_card=task_c)
-                            task_list.tasklist_title = subtask.get('tasklist_title', task_list.tasklist_title)
-                            task_list.tasklist_description = subtask.get('tasklist_description', task_list.tasklist_description)
-                            task_list.priority = subtask.get('priority', task_list.priority)
-                            task_list.label_color = subtask.get('label_color', task_list.label_color)
-                            task_list.start_date = subtask.get('start_date', task_list.start_date)
-                            task_list.due_date = subtask.get('due_date', task_list.due_date)
-                            task_list.is_completed = subtask.get('is_completed', task_list.is_completed)
-                            task_list.updated_by = request.user
-                            task_list.assigned_to = subtask.get('assigned_to', task_list.assigned_to)
-                            if subtask.get('assigned_to'):
-                                try:
-                                    assigned_user = User.objects.get(user_id=subtask['assigned_to'])
-                                    task_list.assigned_to = assigned_user
-                                except User.DoesNotExist:
-                                    return Response({"error": "Assigned user not found"}, status=status.HTTP_404_NOT_FOUND)
-                                
-                            task_list.save()
-                            activity(request.user, f"Full_Name: {request.user.full_name}, updated subtask: {task_list.tasklist_title} for task: {task_c.title} in board: {task_c.board.title}")
-                        except TaskList.DoesNotExist:
-                            continue
-                    else:
-                        TaskList.objects.create(
-                            task_card=task_c,
-                            tasklist_title=subtask.get('tasklist_title', ''),
-                            tasklist_description=subtask.get('tasklist_description', ''),
-                            priority = subtask.get('priority', ''),
-                            label_color = subtask.get('label_color', ''),
-                            start_date = subtask.get('start_date', ''),
-                            due_date=subtask.get('due_date'),
-                            is_completed=subtask.get('is_completed', False),
-                            assigned_to=subtask.get('assigned_to', None),
-                            created_by=request.user
-                        )
-
             task_c.save()
             activity(request.user, f"Full_Name: {request.user.full_name}, updated task: {task_c.title} in board: {task_c.board.title}")
+            
             serializer = TaskCardSerializer(task_c)
             return Response({"message": "Task updated successfully", "Updated task Details":serializer.data}, status=status.HTTP_200_OK)  
 
@@ -267,3 +227,93 @@ def star_task_card(request):
         return Response({"message": "Task star status updated", "is_starred": task.is_starred})
     except TaskCard.DoesNotExist:
         return Response({"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+###########################################################################################################################################
+###########################################################################################################################################
+###########################################################################################################################################
+
+# Function  for create Taskslists
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_task_list(request):
+
+    task_id = request.data.get("task_id")
+    task = TaskCard.objects.get(id=task_id)
+
+    if not task:
+        return Response({"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    try:
+        task_list = TaskList.objects.create(
+            task_card = task,
+            tasklist_title = request.data.get("tasklist_title"),
+            tasklist_description = request.data.get("tasklist_description"),
+            priority = request.data.get("priority"),
+            label_color = request.data.get("label_color"),
+            start_date = request.data.get("start_date"),
+            due_date = request.data.get("due_date"),
+            is_completed = request.data.get("is_completed", False),
+            assigned_to = request.data.get("assigned_to"),
+            created_by = request.user
+        )
+        activity(request.user, f"{request.user.full_name} created task list: {task_list.tasklist_title} in task: {task.title}")
+        return Response({"Status":"Successfull", "message": "Task list created", "Task List Data": TaskListSerializer(task_list).data}, status=status.HTTP_201_CREATED)
+
+    except TaskCard.DoesNotExist:
+        return Response({"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+
+# Function for Update Tasks lists
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_tasks_lists(request):
+
+    task_list_id = request.data.get("task_list_id")
+
+    try:
+        task_list = TaskList.objects.get(id=task_list_id, created_by=request.user)
+
+        task_list.tasklist_title = request.data.get("tasklist_title", task_list.tasklist_title)
+        task_list.tasklist_description = request.data.get("tasklist_description", task_list.tasklist_description)
+        task_list.priority = request.data.get("priority", task_list.priority)
+        task_list.label_color = request.data.get("label_color", task_list.label_color)
+        task_list.start_date = request.data.get("start_date", task_list.start_date)
+        task_list.due_date = request.data.get("due_date", task_list.due_date)
+        task_list.is_completed = request.data.get("is_completed", task_list.is_completed)
+        task_list.assigned_to = request.data.get("assigned_to", task_list.assigned_to)
+
+        task_list.save()
+        activity(request.user, f"{request.user.full_name} updated task list: {task_list.tasklist_title} in task: {task_list.task_card.title}")
+        return Response({"Status":"Successfull", "message": "Task list updated", "Task List Data": TaskListSerializer(task_list).data}, status=status.HTTP_200_OK)
+
+    except TaskList.DoesNotExist:
+        return Response({"error": "Task list not found"}, status=status.HTTP_404_NOT_FOUND)
+    
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# Function For Tasks lists Delete
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def tasks_lists_delete(request):
+
+    task_list_id = request.data.get("task_list_id")
+
+    try:
+        task_list = TaskList.objects.get(id=task_list_id, created_by=request.user)
+        task_list.delete()
+
+        activity(request.user, f"{request.user.full_name} deleted task list: {task_list.tasklist_title} in task: {task_list.task_card.title}")
+
+        return Response({"Status":"Successfull", "message": "Task list deleted"}, status=status.HTTP_204_NO_CONTENT)
+
+    except TaskList.DoesNotExist:
+        return Response({"error": "Task list not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

@@ -159,12 +159,13 @@ def view_board_members(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def get_my_board(request):
-  
+
     try:
         
         board_id = request.data.get('board_id')
         today = timezone.now().date()
         tomorrow = today + timedelta(days=1)
+        this_week =  today - timedelta(days=today.weekday())
         next_week = today + timedelta(weeks=1)
         month = today + timedelta(days=30)
 
@@ -216,12 +217,18 @@ def get_my_board(request):
                 tasks = tasks.filter(is_completed='completed')
             else:
                 tasks = tasks.exclude(is_completed='completed')
-
+        
         if request.data.get('task_title'):
             tasks = tasks.filter(title__icontains=request.data['task_title'])
 
         if request.data.get('task_description'):
             tasks = tasks.filter(description__icontains=request.data['task_description'])
+
+        if request.data.get('created_by'):
+            tasks = tasks.filter(created_by__full_name__icontains=request.data['created_by'])
+
+        if request.data.get('is_starred'):
+            tasks = tasks.filter(is_starred=request.data['is_starred'])
 
         # TaskList filters
         if request.data.get('task_list_title'):
@@ -232,6 +239,12 @@ def get_my_board(request):
 
         if request.data.get('assigned_to'):
             tasks = tasks.filter(assigned_to__full_name__icontains=request.data['assigned_to'])
+
+        if request.data.get('priority'):
+            tasks = tasks.filter(task_lists__priority=request.data['priority'])
+
+        if request.data.get('label_color'):
+            tasks = tasks.filter(task_lists__label_color=request.data['label_color'])
 
         if request.data.get('no_due'):
             tasks = tasks.filter(task_lists__due_date__isnull=True)
@@ -250,7 +263,10 @@ def get_my_board(request):
 
         if request.data.get('due_on_this_month'):
             tasks = tasks.filter(task_lists__due_date__month=today.month)
-        
+
+        if request.data.get('due_on_this_week'):
+            tasks = tasks.filter(task_lists__due_date__range=[this_week, next_week])
+
         tasks = tasks.distinct()
         url_path = request.META.get('HTTP_HOST', '')
 
@@ -276,7 +292,7 @@ def get_my_board(request):
                 },
                 "Task Lists": TaskListSerializer(tasks_lists, many=True).data,
                 # "Comments": CommentDetailSerializer(comments, many=True).data
-
+    
             })
         activity(request.user, f"{request.user.full_name} performed action on board, board title: {board.title}")
         return Response({"message": "Successfull", "Taskboard data": board_data}, status=status.HTTP_200_OK)
