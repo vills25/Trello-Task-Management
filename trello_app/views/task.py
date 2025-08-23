@@ -265,24 +265,24 @@ def update_tasks_lists(request):
                 if task_image:
                     task_image.task_image = request.FILES["image"]
                     task_image.save()
-                    activity(request.user, f"Full_Name: {request.user.full_name}, updated task image>>{task_image.task_image.name} in task: {task_list.title} in board: {task_list.board.title}")
+                    activity(request.user, f"Full_Name: {request.user.full_name}, updated task image>>{task_image.task_image.name} in task: {task_list.tasklist_title} in board: {task_list.task_card.board.title}")
                 else:
-                    TaskImage.objects.create(task=task_list, image=request.FILES["image"])
-                    activity(request.user, f"Full_Name: {request.user.full_name}, Uploaded image>>{request.FILES['image'].name} for task: {task_list.title} in board: {task_list.board.title}")
+                    TaskImage.objects.create(tasks_lists_id=task_list, task_image=request.FILES["image"])
+                    activity(request.user, f"Full_Name: {request.user.full_name}, Uploaded image>>{request.FILES['image'].name} for task: {task_list.tasklist_title} in board: {task_list.task_card.board.title}")
 
             if "attachment" in request.FILES:
                 if task_attachment:
                     task_attachment.task_attachment = request.FILES["attachment"]
                     task_attachment.save()
-                    activity(request.user, f"Full_Name: {request.user.full_name}, updated task attachment>>{task_attachment.task_attachment.name} for task: {task_list.title} in board: {task_list.board.title}")
+                    activity(request.user, f"Full_Name: {request.user.full_name}, updated task attachment>>{task_attachment.task_attachment.name} for task: {task_list.tasklist_title} in board: {task_list.task_card.board.title}")
                 else:
-                    TaskAttachment.objects.create(task=task_list, file=request.FILES["attachment"])
-                    activity(request.user, f"Full_Name: {request.user.full_name}, Attached Files>>{request.FILES['attachment'].name} for task: {task_list.title} in board: {task_list.board.title}")
+                    TaskAttachment.objects.create(tasks_lists_id=task_list, task_attachment=request.FILES["attachment"])
+                    activity(request.user, f"Full_Name: {request.user.full_name}, Attached Files>>{request.FILES['attachment'].name} for task: {task_list.tasklist_title} in board: {task_list.task_card.board.title}")
 
         task_list.save()
         activity(request.user, f"{request.user.full_name} updated task list: {task_list.tasklist_title} in task: {task_list.task_card.title}")
         return Response({"Status":"Successfull", "message": "Task list updated", "Task List Data": TaskListSerializer(task_list).data}, status=status.HTTP_200_OK)
-    
+
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 

@@ -31,198 +31,196 @@
 
 ```json
 {
-  "message": "Successfull",
-  "Taskboard data": {
-    "board_id": 4,
-    "title": "Customer Support Training ryan second board",
-    "description": "Onboard new support agents with product knowledge",
-    "visibility": "team",
-    "created_by": "Ryan Scott",
-    "created_at": "13-08-2025 09:52:03",
-    "updated_by": "Unknown",
-    "updated_at": "13-08-2025 09:52:03",
-    "members": [
-      {
-        "user_id": 22,
-        "full_name": "Ryan Scott"
-      }
-    ],
-    "Tasks Cards": [
-      {
-        "Task_id": 10,
-        "Title": "Support Team Training",
-        "Description": "Onboard new customer support representatives",
-        "Created_by": "Ryan Scott",
-        "Created_at": "13-08-2025 09:58:40",
-        "Updated_by": "Ryan Scott",
-        "Updated_at": "20-08-2025 07:31:47",
-        "Media_files": {
-          "Images": [
+    "message": "Successfull",
+    "Taskboard data": {
+        "board_id": 3,
+        "title": "Website Redesign",
+        "description": "Complete UI/UX overhaul for main company website",
+        "visibility": "private",
+        "created_by": "Ryan Scott",
+        "created_at": "13-08-2025 07:30:26",
+        "updated_by": "Unknown",
+        "updated_at": "13-08-2025 07:31:43",
+        "members": [
             {
-              "image_url": "http://127.0.0.1:8000/media/task_images/lake_night_starry_sky_143961_2560x1440_dGHDCZX.jpg"
-            }
-          ],
-          "Attachments": [
+                "user_id": 1,
+                "full_name": "asus"
+            },
             {
-              "attachment_url": "http://127.0.0.1:8000/media/task_attachment/20241206_YcuoDFG.jpg"
+                "user_id": 3,
+                "full_name": "Vishal Sharma"
+            },
+            {
+                "user_id": 5,
+                "full_name": "Rahul Lokesh"
+            },
+            {
+                "user_id": 22,
+                "full_name": "Ryan Scott"
             }
-          ]
-        },
-        "Task Lists": [
-          {
-            "tasklist_id": 10,
-            "task_card": 10,
-            "tasklist_title": "Product Knowledge",
-            "tasklist_description": "Train on core product features",
-            "priority": "low",
-            "label_color": "green",
-            "start_date": null,
-            "due_date": "2025-08-12",
-            "created_at": "13-08-2025 15:28:40",
-            "created_by": "ryan_scott",
-            "updated_at": "13-08-2025 15:28:40",
-            "is_completed": false,
-            "updated_by": null,
-            "comments": [
-              {
-                "user": {
-                  "user_id": 22,
-                  "full_name": "Ryan Scott"
-                },
-                "comment_text": "This is Comment",
-                "created_at": "20-08-2025 16:33:23"
-              },
-              {
-                "user": {
-                  "user_id": 22,
-                  "full_name": "Ryan Scott"
-                },
-                "comment_text": "This is 2 Comment",
-                "created_at": "20-08-2025 16:37:37"
-              },
-              {
-                "user": {
-                  "user_id": 5,
-                  "full_name": "Rahul Lokesh"
-                },
-                "comment_text": "This is  Comment from Rahul",
-                "created_at": "20-08-2025 18:18:18"
-              }
-            ],
-            "assigned_to": null
-          },
-          {
-            "tasklist_id": 11,
-            "task_card": 10,
-            "tasklist_title": "CRM Training",
-            "tasklist_description": "Teach Zendesk system usage",
-            "priority": "low",
-            "label_color": "green",
-            "start_date": null,
-            "due_date": "2025-08-22",
-            "created_at": "13-08-2025 15:28:40",
-            "created_by": "ryan_scott",
-            "updated_at": "13-08-2025 15:28:40",
-            "is_completed": false,
-            "updated_by": null,
-            "comments": [],
-            "assigned_to": null
-          },
-          {
-            "tasklist_id": 12,
-            "task_card": 10,
-            "tasklist_title": "Mock Calls",
-            "tasklist_description": "Practice handling customer scenarios",
-            "priority": "low",
-            "label_color": "green",
-            "start_date": null,
-            "due_date": "2025-09-19",
-            "created_at": "13-08-2025 15:28:40",
-            "created_by": "ryan_scott",
-            "updated_at": "13-08-2025 15:28:40",
-            "is_completed": false,
-            "updated_by": null,
-            "comments": [],
-            "assigned_to": null
-          }
+        ],
+        "Tasks Cards": [
+            {
+                "Task_id": 7,
+                "Title": "Q4 Marketing Launch",
+                "Description": "Execute holiday marketing campaign",
+                "Created_by": "Ryan Scott",
+                "Created_at": "13-08-2025 09:34:02",
+                "Updated_by": "None",
+                "Updated_at": "13-08-2025 09:34:02",
+                "Task Lists": [
+                    {
+                        "tasklist_id": 3,
+                        "tasklist_title": "Content Creation",
+                        "tasklist_description": "Write blog posts and social media copy",
+                        "priority": "low",
+                        "label_color": "green",
+                        "due_date": "15-08-2025",
+                        "comments": [
+                            {
+                                "comment": "This is a Comment",
+                                "commented_by": "Ryan Scott"
+                            },
+                            {
+                                "comment": "This is a Comment by Rahul",
+                                "commented_by": "Rahul Lokesh"
+                            },
+                            {
+                                "comment": "This is a Comment by asus",
+                                "commented_by": "asus"
+                            },
+                            {
+                                "comment": "This is a Comment by vishal",
+                                "commented_by": "Vishal Sharma"
+                            }
+                        ],
+                        "Media_files": {
+                            "Images": [
+                                {
+                                    "image_url": "http://127.0.0.1:8000/media/task_images/Aestro_wallpaper_1_Sg49EQs.jpg"
+                                }
+                            ],
+                            "Attachments": [
+                                {
+                                    "attachment_url": "http://127.0.0.1:8000/media/task_attachment/lake_night_starry_sky_143961_2560x1440_UNp9sk9.jpg"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "tasklist_id": 4,
+                        "tasklist_title": "Ad Design",
+                        "tasklist_description": "Create Facebook/Google ads",
+                        "priority": "low",
+                        "label_color": "green",
+                        "due_date": "13-09-2025",
+                        "comments": [],
+                        "Media_files": {
+                            "Images": [],
+                            "Attachments": []
+                        }
+                    }
+                ]
+            },
+            {
+                "Task_id": 8,
+                "Title": "Database Upgrade",
+                "Description": "Migrate from MySQL to PostgreSQL",
+                "Created_by": "Ryan Scott",
+                "Created_at": "13-08-2025 09:35:22",
+                "Updated_by": "None",
+                "Updated_at": "13-08-2025 09:35:22",
+                "Task Lists": [
+                    {
+                        "tasklist_id": 5,
+                        "tasklist_title": "Backup Data",
+                        "tasklist_description": "Create full database backup",
+                        "priority": "low",
+                        "label_color": "green",
+                        "due_date": null,
+                        "comments": [],
+                        "Media_files": {
+                            "Images": [],
+                            "Attachments": []
+                        }
+                    },
+                    {
+                        "tasklist_id": 6,
+                        "tasklist_title": "Schema Migration",
+                        "tasklist_description": "Convert tables to PostgreSQL format",
+                        "priority": "low",
+                        "label_color": "green",
+                        "due_date": null,
+                        "comments": [],
+                        "Media_files": {
+                            "Images": [],
+                            "Attachments": []
+                        }
+                    }
+                ]
+            },
+            {
+                "Task_id": 9,
+                "Title": "Mobile App Feature Update",
+                "Description": "Implement new user profile features",
+                "Created_by": "Ryan Scott",
+                "Created_at": "13-08-2025 09:47:27",
+                "Updated_by": "Ryan Scott",
+                "Updated_at": "14-08-2025 12:50:27",
+                "Task Lists": [
+                    {
+                        "tasklist_id": 7,
+                        "tasklist_title": "Backend API",
+                        "tasklist_description": "Develop new endpoints for profile data",
+                        "priority": "low",
+                        "label_color": "green",
+                        "due_date": "15-08-2025",
+                        "comments": [],
+                        "Media_files": {
+                            "Images": [],
+                            "Attachments": []
+                        }
+                    },
+                    {
+                        "tasklist_id": 8,
+                        "tasklist_title": "UI Implementation",
+                        "tasklist_description": "Build profile screen in React Native",
+                        "priority": "low",
+                        "label_color": "green",
+                        "due_date": "12-09-2025",
+                        "comments": [
+                            {
+                                "comment": "This is a Comment",
+                                "commented_by": "Ryan Scott"
+                            }
+                        ],
+                        "Media_files": {
+                            "Images": [],
+                            "Attachments": []
+                        }
+                    },
+                    {
+                        "tasklist_id": 9,
+                        "tasklist_title": "Testing",
+                        "tasklist_description": "Conduct QA testing on new features",
+                        "priority": "low",
+                        "label_color": "green",
+                        "due_date": "14-08-2025",
+                        "comments": [
+                            {
+                                "comment": "This is a Comment",
+                                "commented_by": "Ryan Scott"
+                            }
+                        ],
+                        "Media_files": {
+                            "Images": [],
+                            "Attachments": []
+                        }
+                    }
+                ]
+            }
         ]
-      },
-      {
-        "Task_id": 11,
-        "Title": "New Office Setup",
-        "Description": "Coordinate relocation to new headquarters",
-        "Created_by": "Ryan Scott",
-        "Created_at": "13-08-2025 10:00:35",
-        "Updated_by": "None",
-        "Updated_at": "13-08-2025 10:00:35",
-        "Media_files": {
-          "Images": [
-            {
-              "image_url": "http://127.0.0.1:8000/media/task_images/2859328_VC7bUbB.jpg"
-            }
-          ],
-          "Attachments": [
-            {
-              "attachment_url": "http://127.0.0.1:8000/media/task_attachment/Trello_Task_Management_App_1_IJysrEo.docx"
-            }
-          ]
-        },
-        "Task Lists": [
-          {
-            "tasklist_id": 13,
-            "task_card": 11,
-            "tasklist_title": "Furniture Order",
-            "tasklist_description": "Select and purchase office furniture",
-            "priority": "low",
-            "label_color": "green",
-            "start_date": null,
-            "due_date": "2025-08-13",
-            "created_at": "13-08-2025 15:30:35",
-            "created_by": "ryan_scott",
-            "updated_at": "13-08-2025 15:30:35",
-            "is_completed": false,
-            "updated_by": null,
-            "comments": [],
-            "assigned_to": null
-          },
-          {
-            "tasklist_id": 14,
-            "task_card": 11,
-            "tasklist_title": "IT Infrastructure",
-            "tasklist_description": "Set up network and workstations",
-            "priority": "low",
-            "label_color": "green",
-            "start_date": null,
-            "due_date": "2025-08-18",
-            "created_at": "13-08-2025 15:30:35",
-            "created_by": "ryan_scott",
-            "updated_at": "13-08-2025 15:30:35",
-            "is_completed": false,
-            "updated_by": null,
-            "comments": [],
-            "assigned_to": null
-          },
-          {
-            "tasklist_id": 15,
-            "task_card": 11,
-            "tasklist_title": "Employee Orientation",
-            "tasklist_description": "Conduct new office tours",
-            "priority": "low",
-            "label_color": "green",
-            "start_date": null,
-            "due_date": "2025-10-15",
-            "created_at": "13-08-2025 15:30:35",
-            "created_by": "ryan_scott",
-            "updated_at": "13-08-2025 15:30:35",
-            "is_completed": false,
-            "updated_by": null,
-            "comments": [],
-            "assigned_to": null
-          }
-        ]
-      }
-    ]
-  }
+    }
 }
 ```
 
@@ -285,4 +283,10 @@
 }
 ```
 
-> > > > > > > 691fd223ebf513a876c2b384200b00a927a55ae9
+>>>>>>> 691fd223ebf513a876c2b384200b00a927a55ae9
+>>>>>>>
+>>>>>>
+>>>>>
+>>>>
+>>>
+>>

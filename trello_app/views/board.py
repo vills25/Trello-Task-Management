@@ -273,13 +273,13 @@ def get_my_board(request):
         for task in tasks:
             tasks_lists = TaskList.objects.filter(task_card=task)
             comments = Comment.objects.filter(user= request.user)
-            print("===============================comments=",comments)
             
             task_list_data = []
             for tlist in tasks_lists:
                 list_images = TaskImage.objects.filter(tasks_lists_id=tlist)
                 list_attachments = TaskAttachment.objects.filter(tasks_lists_id=tlist)
-                
+                list_comments = Comment.objects.filter(task_list=tlist)
+
                 task_list_data.append({
                     "tasklist_id": tlist.tasklist_id,
                     "tasklist_title": tlist.tasklist_title,
@@ -287,7 +287,13 @@ def get_my_board(request):
                     "priority": tlist.priority,
                     "label_color": tlist.label_color,
                     "due_date": tlist.due_date.strftime("%d-%m-%Y") if tlist.due_date else None,
-                    "comments": [{"comment": comment.comment_text, "commented_by":request.user.full_name} for comment in comments if comment.task_list == tlist],
+                    "comments": [
+                    {
+                        "comment": comment.comment_text,
+                        "commented_by": comment.user.full_name if comment.user else "Unknown"
+                    }
+                    for comment in list_comments
+                ],
                     "Media_files": {
                         "Images": [{"image_url": f'http://{url_path}{img.task_image.url}'} for img in list_images],
                         "Attachments": [{"attachment_url": f'http://{url_path}{att.task_attachment.url}'} for att in list_attachments]
@@ -303,8 +309,6 @@ def get_my_board(request):
                 "Updated_by": task.updated_by.full_name if task.updated_by else "None",
                 "Updated_at": task.updated_at.strftime("%d-%m-%Y %H:%M:%S"),
                 "Task Lists": task_list_data,
-                # "Comments": CommentDetailSerializer(comments, many=True).data
-    
             })
         activity(request.user, f"{request.user.full_name} performed action on board, board title: {board.title}")
         return Response({"message": "Successfull", "Taskboard data": board_data}, status=status.HTTP_200_OK)
