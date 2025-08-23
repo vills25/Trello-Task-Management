@@ -86,17 +86,16 @@ class TaskList(models.Model):
 
 class TaskImage(models.Model):
     task_image_id = models.AutoField(primary_key=True)
-    task_card = models.ForeignKey(TaskCard, on_delete=models.CASCADE)
+    tasks_lists_id = models.ForeignKey(TaskList, on_delete=models.CASCADE, related_name="image")
     task_image = models.ImageField(upload_to='task_images/')
     uploaded_at = models.DateTimeField(auto_now_add=True)
     uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name='image_uploaded_by')
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name='image_updated_by')
 
-
 class TaskAttachment(models.Model):
     task_attachment_id = models.AutoField(primary_key=True)
-    task_card = models.ForeignKey(TaskCard, on_delete=models.CASCADE)
+    tasks_lists_id = models.ForeignKey(TaskList, on_delete=models.CASCADE, related_name="attachment")
     task_attachment = models.FileField(upload_to='task_attachment/')
     uploaded_at = models.DateTimeField(auto_now_add=True)
     uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name='attachment_uploaded_by')

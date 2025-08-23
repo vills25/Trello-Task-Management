@@ -22,10 +22,10 @@ class TaskCardAdmin(admin.ModelAdmin):
     search_fields = ['task_id', 'title', 'description','board__title','is_completed','created_by__username','created_by__full_name','is_starred']
 
 class TaskImageAdmin(admin.ModelAdmin):
-    list_display = ('task_image_id', 'task_card', 'task_image')
+    list_display = ('task_image_id','task_image')
 
 class TaskAttachmentAdmin(admin.ModelAdmin):
-    list_display = ('task_attachment_id', 'task_card', 'task_attachment')
+    list_display = ('task_attachment_id','task_attachment')
 
 class ActivityAdmin(admin.ModelAdmin):
     list_display = ('date_time', 'user', 'Details')

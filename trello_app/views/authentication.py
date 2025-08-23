@@ -304,3 +304,49 @@ def create_comment(request):
     
     except Exception as e:
         return Response({"status": "error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+# Function for Edit Comments
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def edit_comment(request):
+
+    if not request.data.get('comment_id') or not request.data.get('comment_text'):
+        return Response({"error": "Comment ID and comment text required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        comment = Comment.objects.get(comment_id=request.data['comment_id'], user=request.user)
+        comment.comment_text = request.data['comment_text']
+        comment.save()
+
+        activity(request.user, f"{request.user.full_name} edited a comment on task list: {comment.task_list.tasklist_title}")
+        serializer = CommentDetailSerializer(comment)
+        return Response({"status": "success", "message": "Comment updated successfully", "data": serializer.data},
+                        status=status.HTTP_200_OK)
+
+    except Comment.DoesNotExist:
+        return Response({"status": "error", "message": "Comment does not exist"}, status=status.HTTP_404_NOT_FOUND)
+
+    except Exception as e:
+        return Response({"status": "error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+# Function for Delete Comments
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_comment(request):
+
+    if not request.data.get('comment_id'):
+        return Response({"error": "Comment ID required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        comment = Comment.objects.get(comment_id=request.data['comment_id'], user=request.user)
+        comment.delete()
+        activity(request.user, f"{request.user.full_name} deleted a comment from task list: {comment.task_list.tasklist_title}")
+
+        return Response({"status": "success", "message": "Comment deleted successfully"},
+                        status=status.HTTP_200_OK)
+
+    except Comment.DoesNotExist:
+        return Response({"status": "error", "message": "Comment does not exist"}, status=status.HTTP_404_NOT_FOUND)
+
+    except Exception as e:
+        return Response({"status": "error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)

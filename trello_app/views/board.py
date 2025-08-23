@@ -271,11 +271,28 @@ def get_my_board(request):
         url_path = request.META.get('HTTP_HOST', '')
 
         for task in tasks:
-            task_images = TaskImage.objects.filter(task_card=task)
-            task_attachments = TaskAttachment.objects.filter(task_card=task)
             tasks_lists = TaskList.objects.filter(task_card=task)
             comments = Comment.objects.filter(user= request.user)
             print("===============================comments=",comments)
+            
+            task_list_data = []
+            for tlist in tasks_lists:
+                list_images = TaskImage.objects.filter(tasks_lists_id=tlist)
+                list_attachments = TaskAttachment.objects.filter(tasks_lists_id=tlist)
+                
+                task_list_data.append({
+                    "tasklist_id": tlist.tasklist_id,
+                    "tasklist_title": tlist.tasklist_title,
+                    "tasklist_description": tlist.tasklist_description,
+                    "priority": tlist.priority,
+                    "label_color": tlist.label_color,
+                    "due_date": tlist.due_date.strftime("%d-%m-%Y") if tlist.due_date else None,
+                    "comments": [{"comment": comment.comment_text, "commented_by":request.user.full_name} for comment in comments if comment.task_list == tlist],
+                    "Media_files": {
+                        "Images": [{"image_url": f'http://{url_path}{img.task_image.url}'} for img in list_images],
+                        "Attachments": [{"attachment_url": f'http://{url_path}{att.task_attachment.url}'} for att in list_attachments]
+                    }
+                })
             
             board_data["Tasks Cards"].append({
                 "Task_id": task.task_id,
@@ -285,12 +302,7 @@ def get_my_board(request):
                 "Created_at": task.created_at.strftime("%d-%m-%Y %H:%M:%S"),
                 "Updated_by": task.updated_by.full_name if task.updated_by else "None",
                 "Updated_at": task.updated_at.strftime("%d-%m-%Y %H:%M:%S"),
-                            
-                "Media_files": {
-                    "Images": [{"image_url": f'http://{url_path}{image.task_image.url}'} for image in task_images],
-                    "Attachments": [{"attachment_url": f'http://{url_path}{attachment.task_attachment.url}'} for attachment in task_attachments]
-                },
-                "Task Lists": TaskListSerializer(tasks_lists, many=True).data,
+                "Task Lists": task_list_data,
                 # "Comments": CommentDetailSerializer(comments, many=True).data
     
             })

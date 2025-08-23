@@ -23,16 +23,33 @@ class CommentDetailSerializer(serializers.ModelSerializer):
         model = Comment
         fields = ['user', 'comment_text', 'created_at']
 
+class TaskImageSerializer(serializers.ModelSerializer):
+    uploaded_by = serializers.CharField(source='created_by.username', read_only=True)
+    updated_by = serializers.CharField(source='updated_by.username', read_only=True)
+    class Meta:
+        model = TaskImage
+        fields = ['task_image_id', 'tasks_lists_id', 'task_image', 'uploaded_at', 'uploaded_by', 'updated_at', 'updated_by']
+
+class TaskAttachmentSerializer(serializers.ModelSerializer):
+    uploaded_by = serializers.CharField(source='created_by.username', read_only=True)
+    updated_by = serializers.CharField(source='updated_by.username', read_only=True)
+
+    class Meta:
+        model = TaskAttachment
+        fields = ['task_attachment_id', 'tasks_lists_id','task_attachment', 'uploaded_at', 'uploaded_by', 'updated_at', 'updated_by']
+
 class TaskListSerializer(serializers.ModelSerializer):
     assigned_to = UserDetailSerializer()
     created_by = serializers.CharField(source='created_by.username', read_only=True)
     updated_by = serializers.CharField()
     comments = CommentDetailSerializer(many=True, read_only=True)
+    image = TaskImageSerializer(many=True, read_only=True)
+    attachment = TaskAttachmentSerializer(many=True, read_only=True)
 
     class Meta:
         model = TaskList
         fields = ['tasklist_id', 'task_card', 'tasklist_title', 'tasklist_description','priority','label_color','start_date','due_date',
-                  'created_at','created_by', 'updated_at','is_completed', 'updated_by', 'comments','assigned_to']
+                  'created_at','created_by', 'updated_at','is_completed', 'updated_by','image','attachment','comments','assigned_to']
 
 class CommentSerializer(serializers.ModelSerializer):
     user = UserDetailSerializer()
@@ -60,21 +77,6 @@ class BoardSerializer(serializers.ModelSerializer):
     class Meta:
         model = Board
         fields = ['board_id', 'title', 'description', 'visibility', 'created_by', 'members', 'created_at', 'updated_at', 'updated_by', 'is_starred','task_cards']
-
-class TaskImageSerializer(serializers.ModelSerializer):
-    uploaded_by = serializers.CharField(source='created_by.username', read_only=True)
-    updated_by = serializers.CharField(source='updated_by.username', read_only=True)
-    class Meta:
-        model = TaskImage
-        fields = ['task_image_id', 'task_card', 'task_image', 'uploaded_at', 'uploaded_by', 'updated_at', 'updated_by']
-
-class TaskAttachmentSerializer(serializers.ModelSerializer):
-    uploaded_by = serializers.CharField(source='created_by.username', read_only=True)
-    updated_by = serializers.CharField(source='updated_by.username', read_only=True)
-
-    class Meta:
-        model = TaskAttachment
-        fields = ['task_attachment_id', 'task_card', 'task_attachment', 'uploaded_at', 'uploaded_by', 'updated_at', 'updated_by']
 
 class ActivitySerializer(serializers.ModelSerializer):
 

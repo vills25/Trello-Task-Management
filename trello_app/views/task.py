@@ -92,40 +92,9 @@ def create_task(request):
                 created_by=request.user,
                 updated_by=request.user,
             )
-                
-            for img in request.FILES.getlist("images"):
-                TaskImage.objects.create(task_card=task, task_image=img)
 
-            for file in request.FILES.getlist("attachments"):
-                TaskAttachment.objects.create(task_card=task, task_attachment=file)
-            
-            assigned_to_id = data.get("assigned_to")
-            assigned_to_user = None
-            if assigned_to_id:
-                try:
-                    assigned_to_user = User.objects.get(user_id=assigned_to_id)
-                except User.DoesNotExist:
-                    return Response({"error": "Assigned user does not exist"}, status=status.HTTP_400_BAD_REQUEST)
-                
             activity(request.user, f"{request.user.full_name} created task: {task.title} in board: {board.title}")
-
-            subtasks = data.get('task_lists', [])
-            for sub in subtasks:
-                if sub.get("tasklist_title") and sub.get("tasklist_description"):
-                        TaskList.objects.create(
-                            task_card=task,
-                            tasklist_title=sub.get("tasklist_title"),
-                            tasklist_description=sub.get("tasklist_description"),
-                            priority=sub.get("priority"),
-                            label_color=sub.get("label_color"),
-                            start_date=sub.get("start_date"),
-                            due_date=sub.get("due_date"),
-                            is_completed=sub.get("is_completed", False),
-                            assigned_to=assigned_to_user,
-                            created_by=request.user,
-                            updated_by=request.user
-                        )
-            activity(request.user, f"{request.user.full_name} created task:: {task.title} with subtasks in board:: {board.title}")
+    
             return Response({"message": "Task created successfully", "task_id": task.task_id}, status= status.HTTP_201_CREATED)
 
     except Exception as e:
@@ -150,9 +119,6 @@ def update_task(request):
     if request.user != task_c.created_by:
         return Response({"error": "You cannot edit this task"}, status=status.HTTP_403_FORBIDDEN)
 
-    task_image = TaskImage.objects.filter(task_card=task_c).first()
-    task_attachment = TaskAttachment.objects.filter(task_card=task_c).first()
-
     try:
         with transaction.atomic():  
 
@@ -161,27 +127,9 @@ def update_task(request):
             
             if 'description' in data:
                 task_c.description = data['description']
-            
-            if "image" in request.FILES:
-                if task_image:
-                    task_image.task_image = request.FILES["image"]
-                    task_image.save()
-                    activity(request.user, f"Full_Name: {request.user.full_name}, updated task image>>{task_image.task_image.name} in task: {task_c.title} in board: {task_c.board.title}")
-                else:
-                    TaskImage.objects.create(task=task_c, image=request.FILES["image"])
-                    activity(request.user, f"Full_Name: {request.user.full_name}, added task image>>{request.FILES['image'].name} for task: {task_c.title} in board: {task_c.board.title}")
 
             if "is_completed" in data:
                 task_c.is_completed = data["is_completed"]
-                
-            if "attachment" in request.FILES:
-                if task_attachment:
-                    task_attachment.task_attachment = request.FILES["attachment"]
-                    task_attachment.save()
-                    activity(request.user, f"Full_Name: {request.user.full_name}, updated task attachment>>{task_attachment.task_attachment.name} for task: {task_c.title} in board: {task_c.board.title}")
-                else:
-                    TaskAttachment.objects.create(task=task_c, file=request.FILES["attachment"])
-                    activity(request.user, f"Full_Name: {request.user.full_name}, added task attachment>>{request.FILES['attachment'].name} for task: {task_c.title} in board: {task_c.board.title}")
 
             task_c.save()
             activity(request.user, f"Full_Name: {request.user.full_name}, updated task: {task_c.title} in board: {task_c.board.title}")
@@ -230,35 +178,51 @@ def star_task_card(request):
 
 
 ###########################################################################################################################################
-###########################################################################################################################################
+#          TASK LISTS         #############################################################################################################
 ###########################################################################################################################################
 
 # Function  for create Taskslists
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def create_task_list(request):
+def create_task_lists(request):
 
-    task_id = request.data.get("task_id")
-    task = TaskCard.objects.get(id=task_id)
+    get_task_id = request.data.get("task_id")
+    task = TaskCard.objects.get(task_id=get_task_id)
 
     if not task:
         return Response({"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
 
+    assigned_to_id = request.data.get("assigned_to")
+    assigned_to_user = None
+    if assigned_to_id:
+        try:
+            assigned_to_user = User.objects.get(user_id=assigned_to_id)
+        except User.DoesNotExist:
+            return Response({"error": "Assigned user does not exist"}, status=status.HTTP_400_BAD_REQUEST)
+    
     try:
-        task_list = TaskList.objects.create(
-            task_card = task,
-            tasklist_title = request.data.get("tasklist_title"),
-            tasklist_description = request.data.get("tasklist_description"),
-            priority = request.data.get("priority"),
-            label_color = request.data.get("label_color"),
-            start_date = request.data.get("start_date"),
-            due_date = request.data.get("due_date"),
-            is_completed = request.data.get("is_completed", False),
-            assigned_to = request.data.get("assigned_to"),
-            created_by = request.user
-        )
-        activity(request.user, f"{request.user.full_name} created task list: {task_list.tasklist_title} in task: {task.title}")
-        return Response({"Status":"Successfull", "message": "Task list created", "Task List Data": TaskListSerializer(task_list).data}, status=status.HTTP_201_CREATED)
+        with transaction.atomic():
+            task_list = TaskList.objects.create(
+                task_card = task,
+                tasklist_title = request.data.get("tasklist_title"),
+                tasklist_description = request.data.get("tasklist_description"),
+                priority = request.data.get("priority"),
+                label_color = request.data.get("label_color"),
+                start_date = request.data.get("start_date"),
+                due_date = request.data.get("due_date"),
+                is_completed = request.data.get("is_completed", False),
+                assigned_to = assigned_to_user,
+                created_by = request.user
+            )
+
+            for img in request.FILES.getlist("images"):
+                TaskImage.objects.create(tasks_lists_id=task_list, task_image=img)
+
+            for file in request.FILES.getlist("attachments"):
+                TaskAttachment.objects.create(tasks_lists_id=task_list, task_attachment=file)
+
+            activity(request.user, f"{request.user.full_name} created task list: {task_list.tasklist_title} in task: {task.title}")
+            return Response({"Status":"Successfull", "message": "Task list created", "Task List Data": TaskListSerializer(task_list).data}, status=status.HTTP_201_CREATED)
 
     except TaskCard.DoesNotExist:
         return Response({"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -275,23 +239,49 @@ def update_tasks_lists(request):
     task_list_id = request.data.get("task_list_id")
 
     try:
-        task_list = TaskList.objects.get(id=task_list_id, created_by=request.user)
+       task_list = TaskList.objects.get(tasklist_id=task_list_id, created_by=request.user)
+    except TaskList.DoesNotExist:
+        return Response({"error": "Task list not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        task_list.tasklist_title = request.data.get("tasklist_title", task_list.tasklist_title)
-        task_list.tasklist_description = request.data.get("tasklist_description", task_list.tasklist_description)
-        task_list.priority = request.data.get("priority", task_list.priority)
-        task_list.label_color = request.data.get("label_color", task_list.label_color)
-        task_list.start_date = request.data.get("start_date", task_list.start_date)
-        task_list.due_date = request.data.get("due_date", task_list.due_date)
-        task_list.is_completed = request.data.get("is_completed", task_list.is_completed)
-        task_list.assigned_to = request.data.get("assigned_to", task_list.assigned_to)
+    if request.user != task_list.created_by:
+        return Response({"error": "You cannot edit this task"}, status=status.HTTP_403_FORBIDDEN)
+
+    task_image = TaskImage.objects.filter(tasks_lists_id=task_list).first()
+    task_attachment = TaskAttachment.objects.filter(tasks_lists_id=task_list).first()
+
+    try:
+        
+        with transaction.atomic():    
+            task_list.tasklist_title = request.data.get("tasklist_title", task_list.tasklist_title)
+            task_list.tasklist_description = request.data.get("tasklist_description", task_list.tasklist_description)
+            task_list.priority = request.data.get("priority", task_list.priority)
+            task_list.label_color = request.data.get("label_color", task_list.label_color)
+            task_list.start_date = request.data.get("start_date", task_list.start_date)
+            task_list.due_date = request.data.get("due_date", task_list.due_date)
+            task_list.is_completed = request.data.get("is_completed", task_list.is_completed)
+            task_list.assigned_to = request.data.get("assigned_to", task_list.assigned_to)
+             
+            if "image" in request.FILES:
+                if task_image:
+                    task_image.task_image = request.FILES["image"]
+                    task_image.save()
+                    activity(request.user, f"Full_Name: {request.user.full_name}, updated task image>>{task_image.task_image.name} in task: {task_list.title} in board: {task_list.board.title}")
+                else:
+                    TaskImage.objects.create(task=task_list, image=request.FILES["image"])
+                    activity(request.user, f"Full_Name: {request.user.full_name}, Uploaded image>>{request.FILES['image'].name} for task: {task_list.title} in board: {task_list.board.title}")
+
+            if "attachment" in request.FILES:
+                if task_attachment:
+                    task_attachment.task_attachment = request.FILES["attachment"]
+                    task_attachment.save()
+                    activity(request.user, f"Full_Name: {request.user.full_name}, updated task attachment>>{task_attachment.task_attachment.name} for task: {task_list.title} in board: {task_list.board.title}")
+                else:
+                    TaskAttachment.objects.create(task=task_list, file=request.FILES["attachment"])
+                    activity(request.user, f"Full_Name: {request.user.full_name}, Attached Files>>{request.FILES['attachment'].name} for task: {task_list.title} in board: {task_list.board.title}")
 
         task_list.save()
         activity(request.user, f"{request.user.full_name} updated task list: {task_list.tasklist_title} in task: {task_list.task_card.title}")
         return Response({"Status":"Successfull", "message": "Task list updated", "Task List Data": TaskListSerializer(task_list).data}, status=status.HTTP_200_OK)
-
-    except TaskList.DoesNotExist:
-        return Response({"error": "Task list not found"}, status=status.HTTP_404_NOT_FOUND)
     
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -302,10 +292,14 @@ def update_tasks_lists(request):
 @permission_classes([IsAuthenticated])
 def tasks_lists_delete(request):
 
-    task_list_id = request.data.get("task_list_id")
+    get_task_list_id = request.data.get("task_list_id")
 
     try:
-        task_list = TaskList.objects.get(id=task_list_id, created_by=request.user)
+        task_list = TaskList.objects.get(tasklist_id=get_task_list_id, created_by=request.user)
+
+        if request.user != task_list.created_by:
+            return Response({"error": "You cannot delete this task"}, status=status.HTTP_403_FORBIDDEN)
+
         task_list.delete()
 
         activity(request.user, f"{request.user.full_name} deleted task list: {task_list.tasklist_title} in task: {task_list.task_card.title}")

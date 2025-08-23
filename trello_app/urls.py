@@ -17,7 +17,9 @@ urlpatterns = [
     path('view_my_profile/', view_my_profile),
     path('show_activity/', show_activity),
     path('create_comment/', create_comment),
-    
+    path('edit_comment/', edit_comment),
+    path('delete_comment/', delete_comment),
+
     # Board Urls
     path('create_board/', create_board),
     path('update_board/', update_board),
@@ -29,10 +31,15 @@ urlpatterns = [
     path('search_boards/', search_boards),
     path('star_board/', star_board),
 
-    # Task Urls
+    # TaskCard Urls
     path('create_task/', create_task),
     path('update_task/', update_task),
     path('delete_task/', delete_task),
     path('search_tasks/', search_tasks),
     path('star_task_card/', star_task_card),
+
+    # TaskList Urls
+    path('create_task_lists/', create_task_lists),
+    path('update_tasks_lists/', update_tasks_lists),
+    path('tasks_lists_delete/', tasks_lists_delete),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
