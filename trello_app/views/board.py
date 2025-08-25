@@ -353,10 +353,14 @@ def star_board(request):
         board = Board.objects.get(board_id=board_id, members=request.user)
         board.is_starred = not board.is_starred
         board.save()
+
         activity(request.user, f"{request.user.full_name} updated Star status of Board: {board.title} - {'Starred' if board.is_starred else 'Unstarred'}")
+
         return Response({"message": "Board star status updated", "is_starred": board.is_starred})
+    
     except Board.DoesNotExist:
         return Response({"error": "Board not found"}, status=status.HTTP_404_NOT_FOUND)
+    
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 

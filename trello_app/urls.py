@@ -46,4 +46,5 @@ urlpatterns = [
     path('tasks_lists_delete/', tasks_lists_delete),
     path('copy_task_list/', copy_task_list),
     path('move_task_list/', move_task_list),
+    path('sort_task_lists/', sort_task_lists),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

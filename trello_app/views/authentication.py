@@ -11,6 +11,36 @@ from django.core.mail import send_mail
 from trello_app.models import *
 from trello_app.serializers import *
 import random
+# from rest_framework import permissions
+# from django.shortcuts import get_object_or_404
+
+# custom permissions for board admin, member
+# class IsBoardAdmin(permissions.BasePermission):
+
+#     def has_permission(self, request, view):
+#         board_id = view.kwargs.get('board_id')
+#         if not board_id:
+#             return False
+#         board = get_object_or_404(Board, board_id=board_id)
+#         return board.admin == request.user
+
+# class IsBoardMember(permissions.BasePermission):
+   
+#     def has_permission(self, request, view):
+#         board_id = view.kwargs.get('board_id')
+#         if not board_id:
+#             return False
+#         board = get_object_or_404(Board, board_id=board_id)
+#         return request.user in board.members.all()
+    
+# class IsBoardAdminOrMember(permissions.BasePermission):
+
+#     def has_permission(self, request, view):
+#         board_id = view.kwargs.get('board_id')
+#         if not board_id:
+#             return False
+#         board = get_object_or_404(Board, board_id=board_id)
+#         return (board.admin == request.user) or (request.user in board.members.all())
 
 
 # Register User
