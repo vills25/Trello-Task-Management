@@ -176,6 +176,84 @@ def star_task_card(request):
     except TaskCard.DoesNotExist:
         return Response({"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
 
+# Move task card to another board  OK
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def move_task_card_to_other_board(request):
+
+    enter_task_id = request.data.get("task_id")
+    new_board_id = request.data.get("new_board_id")
+
+    if not enter_task_id and not new_board_id in request.data:
+        return Response({"status":"error", "message":"please enter task_id and new_board_id"},status = status.HTTP_400_BAD_REQUEST)
+
+    try:
+        
+        get_task = TaskCard.objects.get(task_id=enter_task_id, created_by=request.user)
+        enter_new_board = Board.objects.get(board_id=new_board_id, created_by=request.user)
+
+        get_task.board = enter_new_board
+        get_task.save()
+
+        activity(request.user, f"{request.user.full_name} moved task: {get_task.title} to board: {enter_new_board.title}")
+        return Response({"status":"success", "message": "Task moved successfully", "Task Data": TaskCardSerializer(get_task).data}, status=status.HTTP_200_OK)
+
+    except TaskCard.DoesNotExist:
+        return Response({"status":"error", "message": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    except Board.DoesNotExist:
+        return Response({"status":"error" ,"message": "board not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+# Copy Tasks Card   OK
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def copy_task_card(request):
+
+    try:
+        original_task_card_id = request.data.get("task_id")
+        get_task_card = TaskCard.objects.get(task_id=original_task_card_id, created_by=request.user)
+        
+        copy_task_card = TaskCard.objects.create(
+            board=get_task_card.board,
+            title=get_task_card.title,
+            description=get_task_card.description,
+            is_completed=get_task_card.is_completed,
+            is_starred=get_task_card.is_starred,
+            created_by=request.user,
+            updated_by=get_task_card.updated_by,
+      
+        )
+
+        for tasklist in get_task_card.task_lists.all():
+            TaskList.objects.create(
+                task_card=copy_task_card,
+                tasklist_title=tasklist.tasklist_title,
+                tasklist_description=tasklist.tasklist_description,
+                priority=tasklist.priority,
+                label_color=tasklist.label_color,
+                start_date=tasklist.start_date,
+                due_date=tasklist.due_date,
+                is_completed=tasklist.is_completed,
+                assigned_to=tasklist.assigned_to,
+                created_by=request.user,
+                updated_by=tasklist.updated_by,
+            )
+        
+
+        activity(request.user, f"{request.user.full_name} copied task card: {get_task_card.title}")
+        serializer = TaskCardSerializer(copy_task_card)
+
+        return Response({"status": "successfull", "message": "Task Card copied", "Task Card Data": serializer.data},
+                        status=status.HTTP_201_CREATED)
+    
+    except TaskCard.DoesNotExist:
+        return Response({"status": "error", "message": "Task Card not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 ###########################################################################################################################################
 #          TASK LISTS         #############################################################################################################
@@ -287,7 +365,7 @@ def update_tasks_lists(request):
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-# Function For Tasks lists Delete
+#Tasks lists Delete
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
 def tasks_lists_delete(request):
@@ -298,16 +376,75 @@ def tasks_lists_delete(request):
         task_list = TaskList.objects.get(tasklist_id=get_task_list_id, created_by=request.user)
 
         if request.user != task_list.created_by:
-            return Response({"error": "You cannot delete this task"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"status":"error", "message": "You cannot delete this task"}, status=status.HTTP_403_FORBIDDEN)
 
         task_list.delete()
 
         activity(request.user, f"{request.user.full_name} deleted task list: {task_list.tasklist_title} in task: {task_list.task_card.title}")
 
-        return Response({"Status":"Successfull", "message": "Task list deleted"}, status=status.HTTP_204_NO_CONTENT)
+        return Response({"status":"successfull", "message": "Task list deleted"}, status=status.HTTP_204_NO_CONTENT)
 
     except TaskList.DoesNotExist:
-        return Response({"error": "Task list not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"status":"error", "message": "Task list not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+# Copy of task lists  OK
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def copy_task_list(request):
+    try:
+        original_task_list_id = request.data.get("task_list_id")
+        get_task_list = TaskList.objects.get(tasklist_id=original_task_list_id, created_by=request.user)
+
+        copy_task_list = TaskList.objects.create(
+                    task_card=get_task_list.task_card,                              
+                    tasklist_title  =  get_task_list.tasklist_title,
+                    tasklist_description  =  get_task_list.tasklist_description,
+                    priority  =  get_task_list.priority,
+                    label_color  =  get_task_list.label_color,
+                    start_date  =  get_task_list.start_date,
+                    due_date  =  get_task_list.due_date,
+                    is_completed  =  get_task_list.is_completed,
+                    assigned_to  =  get_task_list.assigned_to,
+                    created_by  =  request.user
+) 
+        activity(request.user, f"{request.user.full_name} copied task list: {get_task_list.tasklist_title}")
+
+        serializers = TaskListSerializer(copy_task_list)
+        return Response({"status": "successfull", "message": "Task list copied", "Task List Data": serializers.data},
+                          status=status.HTTP_201_CREATED)
+
+    except TaskList.DoesNotExist:
+        return Response({"status":"error", "message": "Original task list not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+# Move tasks list to other tasks card  OK
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def move_task_list(request):
+    try:
+        task_list_id = request.data.get("task_list_id")
+        new_task_card_id = request.data.get("new_task_card_id")
+
+        task_list = TaskList.objects.get(tasklist_id=task_list_id, created_by=request.user)
+        new_task_card = TaskCard.objects.get(task_id=new_task_card_id, created_by=request.user)
+        
+        task_list.task_card = new_task_card
+        task_list.save()
+
+        activity(request.user, f"{request.user.full_name} moved task list: {task_list.tasklist_title} to task card: {new_task_card.title}")
+
+        return Response({"status": "successfull", "message": "Task list moved", "Task List Data": TaskListSerializer(task_list).data}, status=status.HTTP_200_OK)
+
+    except TaskList.DoesNotExist:
+        return Response({"status":"error", "message": "Task list not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    except TaskCard.DoesNotExist:
+        return Response({"status":"error", "message": "New task card not found"}, status=status.HTTP_404_NOT_FOUND)
 
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

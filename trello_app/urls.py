@@ -37,9 +37,13 @@ urlpatterns = [
     path('delete_task/', delete_task),
     path('search_tasks/', search_tasks),
     path('star_task_card/', star_task_card),
+    path('copy_task_card/', copy_task_card),
+    path('move_task_card_to_other_board/', move_task_card_to_other_board),
 
     # TaskList Urls
     path('create_task_lists/', create_task_lists),
     path('update_tasks_lists/', update_tasks_lists),
     path('tasks_lists_delete/', tasks_lists_delete),
+    path('copy_task_list/', copy_task_list),
+    path('move_task_list/', move_task_list),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
