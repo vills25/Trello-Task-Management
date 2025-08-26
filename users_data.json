@@ -1,0 +1,184 @@
+{
+    "users": [
+        {
+            "username": "@arjun01",
+            "email": "arjun01@gmail.com",
+            "password": "123456",
+            "full_name": "Arjun Sharma"
+        },
+        {
+            "username": "@priya02",
+            "email": "priya02@gmail.com",
+            "password": "123456",
+            "full_name": "Priya Mehta"
+        },
+        {
+            "username": "@rahul03",
+            "email": "rahul03@gmail.com",
+            "password": "123456",
+            "full_name": "Rahul Verma"
+        },
+        {
+            "username": "@neha04",
+            "email": "neha04@gmail.com",
+            "password": "123456",
+            "full_name": "Neha Patel"
+        },
+        {
+            "username": "@rohan05",
+            "email": "rohan05@gmail.com",
+            "password": "123456",
+            "full_name": "Rohan Gupta"
+        },
+        {
+            "username": "@sneha06",
+            "email": "sneha06@gmail.com",
+            "password": "123456",
+            "full_name": "Sneha Iyer"
+        },
+        {
+            "username": "@amit07",
+            "email": "amit07@gmail.com",
+            "password": "123456",
+            "full_name": "Amit Kumar"
+        },
+        {
+            "username": "@kavya08",
+            "email": "kavya08@gmail.com",
+            "password": "123456",
+            "full_name": "Kavya Singh"
+        },
+        {
+            "username": "@vijay09",
+            "email": "vijay09@gmail.com",
+            "password": "123456",
+            "full_name": "Vijay Yadav"
+        },
+        {
+            "username": "@anjali10",
+            "email": "anjali10@gmail.com",
+            "password": "123456",
+            "full_name": "Anjali Nair"
+        },
+        {
+            "username": "@deepak11",
+            "email": "deepak11@gmail.com",
+            "password": "123456",
+            "full_name": "Deepak Joshi"
+        },
+        {
+            "username": "@riya12",
+            "email": "riya12@gmail.com",
+            "password": "123456",
+            "full_name": "Riya Chauhan"
+        },
+        {
+            "username": "@suresh13",
+            "email": "suresh13@gmail.com",
+            "password": "123456",
+            "full_name": "Suresh Mishra"
+        },
+        {
+            "username": "@pooja14",
+            "email": "pooja14@gmail.com",
+            "password": "123456",
+            "full_name": "Pooja Desai"
+        },
+        {
+            "username": "@akash15",
+            "email": "akash15@gmail.com",
+            "password": "123456",
+            "full_name": "Akash Reddy"
+        },
+        {
+            "username": "@sonal16",
+            "email": "sonal16@gmail.com",
+            "password": "123456",
+            "full_name": "Sonal Jha"
+        },
+        {
+            "username": "@manish17",
+            "email": "manish17@gmail.com",
+            "password": "123456",
+            "full_name": "Manish Bhatia"
+        },
+        {
+            "username": "@tina18",
+            "email": "tina18@gmail.com",
+            "password": "123456",
+            "full_name": "Tina Kapoor"
+        },
+        {
+            "username": "@raj19",
+            "email": "raj19@gmail.com",
+            "password": "123456",
+            "full_name": "Raj Malhotra"
+        },
+        {
+            "username": "@meena20",
+            "email": "meena20@gmail.com",
+            "password": "123456",
+            "full_name": "Meena Pillai"
+        },
+        {
+            "username": "@anil21",
+            "email": "anil21@gmail.com",
+            "password": "123456",
+            "full_name": "Anil Shukla"
+        },
+        {
+            "username": "@rekha22",
+            "email": "rekha22@gmail.com",
+            "password": "123456",
+            "full_name": "Rekha Dutta"
+        },
+        {
+            "username": "@sanjay23",
+            "email": "sanjay23@gmail.com",
+            "password": "123456",
+            "full_name": "Sanjay Kulkarni"
+        },
+        {
+            "username": "@divya24",
+            "email": "divya24@gmail.com",
+            "password": "123456",
+            "full_name": "Divya Chatterjee"
+        },
+        {
+            "username": "@vivek25",
+            "email": "vivek25@gmail.com",
+            "password": "123456",
+            "full_name": "Vivek Saxena"
+        },
+        {
+            "username": "@sita26",
+            "email": "sita26@gmail.com",
+            "password": "123456",
+            "full_name": "Sita Banerjee"
+        },
+        {
+            "username": "@nilesh27",
+            "email": "nilesh27@gmail.com",
+            "password": "123456",
+            "full_name": "Nilesh Rawat"
+        },
+        {
+            "username": "@anjum28",
+            "email": "anjum28@gmail.com",
+            "password": "123456",
+            "full_name": "Anjum Faridi"
+        },
+        {
+            "username": "@mahesh29",
+            "email": "mahesh29@gmail.com",
+            "password": "123456",
+            "full_name": "Mahesh Choudhary"
+        },
+        {
+            "username": "@geeta30",
+            "email": "geeta30@gmail.com",
+            "password": "123456",
+            "full_name": "Geeta Sinha"
+        }
+    ]
+}

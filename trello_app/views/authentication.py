@@ -270,7 +270,7 @@ def view_my_profile(request):
 
 # Function for Log activity
 def activity(user, Details):
-    return Activity.objects.create(user=user, Details=Details) # Entry in DB of user activity only
+    return Activity.objects.create(user=user, Details=Details)
 
 # Show User Activity
 @api_view(["GET"])

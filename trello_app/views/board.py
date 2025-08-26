@@ -102,7 +102,7 @@ def add_member_to_board(request):
         board.members.add(*user)
         activity(request.user, f"{request.user.username} added members to board, title: {board.title}")
 
-        return Response({"message": f"{user.count()} added to board"}, status=status.HTTP_200_OK)
+        return Response({"message": f"{user.count()} members added to board"}, status=status.HTTP_200_OK)
     except Board.DoesNotExist:
         return Response({"error": "Board not found or access denied"}, status=status.HTTP_404_NOT_FOUND)
     except User.DoesNotExist:

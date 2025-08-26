@@ -7,24 +7,24 @@ from trello_app.models import *
 from trello_app.serializers import *
 from .authentication import activity
 
-# Search Task Cards    
+# Search Task Cards by..    
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def search_tasks(request):
+def search_tasks_by(request):
     try:
-        data = request.data
+
         queryset = TaskCard.objects.filter(board__members=request.user).order_by('-is_starred')
         
-        task_id = data.get('task_id')
-        title = data.get('title')
-        board = data.get('board','')
-        description = data.get('description','')
-        created_by= data.get('created_by','')
-        is_completed= data.get('is_completed','')
-        is_starred = data.get('is_starred','')
-        
+        task_id = request.data.get('task_id')
+        title = request.data.get('title')
+        board = request.data.get('board','')
+        description = request.data.get('description','')
+        created_by= request.data.get('created_by','')
+        is_completed= request.data.get('is_completed','')
+        is_starred = request.data.get('is_starred','')
+
         if task_id:
-                queryset = queryset.filter(pk=task_id)
+                queryset = queryset.filter(task_id=task_id)
 
         if title:
             queryset = queryset.filter(title__icontains = title)
@@ -62,32 +62,32 @@ def search_tasks(request):
 @permission_classes([IsAuthenticated])
 def sort_task_lists(request):
     task_id = request.data.get("task_id")
-    sort_by = request.data.get("sort_by")
-
+    sort_by = request.data.get("sort_list_by")
+    
     if not task_id:
         return Response({"status": "fail", "error": "task_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        queryset = TaskList.objects.filter(task_card_id=task_id)
+    except TaskCard.DoesNotExist:
+        return Response({"status": "fail", "error": "TaskCard not found"}, status=status.HTTP_404_NOT_FOUND)
 
-    queryset = TaskList.objects.filter(task_card_id=task_id)
+    try:
+        if sort_by == "newest_first":
+            queryset = queryset.order_by('-created_at')
+        elif sort_by == "oldest_first":
+            queryset = queryset.order_by('created_at')
+        elif sort_by == "alphabetically":
+            queryset = queryset.order_by('tasklist_title')
+        elif sort_by == "due_date":
+            queryset = queryset.order_by('due_date')
+        else:
+            return Response({"status": "fail", "error": "invalid choice"}, status=status.HTTP_400_BAD_REQUEST)
 
-    if sort_by == "newest":
-        queryset = queryset.order_by('-created_at')
-    elif sort_by == "oldest":
-        queryset = queryset.order_by('created_at')
-    elif sort_by == "alpha":
-        queryset = queryset.order_by('title')
-    else:
-        return Response(
-            {"status": "fail", "error": "invalid choice"},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+        serializer = TaskListSerializer(queryset, many=True)
+        return Response({"status": "success", "Task lists": serializer.data}, status=status.HTTP_200_OK)
 
-    if not queryset.exists():
-        return Response({"status": "No result", "message": "No matching TaskLists found"},
-                        status=status.HTTP_404_NOT_FOUND)
-
-    serializer = TaskListSerializer(queryset, many=True)
-    return Response({"status": "success", "Task lists": serializer.data}, status=status.HTTP_200_OK)
-
+    except Exception as e:
+        return Response({"status": "fail", "error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 # Create Task Card
 @api_view(['POST'])
@@ -517,17 +517,17 @@ def copy_task_list(request):
 @permission_classes([IsAuthenticated])
 def move_task_list(request):
     try:
-        task_list_id = request.data.get("task_list_id")
+        enter_tasklist_id = request.data.get("task_list_id")
         new_task_card_id = request.data.get("new_task_card_id")
 
-        task_list = TaskList.objects.get(tasklist_id=task_list_id, created_by=request.user)
-        new_task_card = TaskCard.objects.get(task_id=new_task_card_id, created_by=request.user)
+        task_list = TaskList.objects.get(tasklist_id = enter_tasklist_id, created_by = request.user)
+        new_task_card = TaskCard.objects.get(task_id = new_task_card_id, created_by = request.user)
         
         task_list.task_card = new_task_card
         task_list.save()
 
         activity(request.user, f"{request.user.full_name} moved task list: {task_list.tasklist_title} to task card: {new_task_card.title}")
-
+        
         serializers = TaskListSerializer(task_list)
         return Response({"status": "successfull", "message": "Task list moved", "Task List Data": serializers.data}, status=status.HTTP_200_OK)
 

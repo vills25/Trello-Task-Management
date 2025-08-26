@@ -35,7 +35,7 @@ urlpatterns = [
     path('create_task/', create_task),
     path('update_task/', update_task),
     path('delete_task/', delete_task),
-    path('search_tasks/', search_tasks),
+    path('search_tasks_by/', search_tasks_by),
     path('star_task_card/', star_task_card),
     path('copy_task_card/', copy_task_card),
     path('move_task_card_to_other_board/', move_task_card_to_other_board),
