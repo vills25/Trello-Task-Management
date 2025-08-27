@@ -1,4 +1,6 @@
-# Trello-Task-Management
+# Trello inspired Task Management
+
+This is the Trello inspired Task-Management Backend-API Project using Python, Django Rest Framework, RestAPI
 
 ## Register Output demo
 
