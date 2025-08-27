@@ -50,10 +50,10 @@ def register_user(request):
     data = request.data
 
     if User.objects.filter(username=data.get('username')).exists():
-        return Response({"error": "Username already Exist."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"error","message": "Username already Exist."}, status=status.HTTP_400_BAD_REQUEST)
 
     if User.objects.filter(email=data.get('email')).exists():
-        return Response({"error": "Email already registered."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"error","message": "Email already registered."}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
         with transaction.atomic():    
@@ -70,7 +70,7 @@ def register_user(request):
                             "message": "User registered successfully.",
                             "data": serializer.data}, status=status.HTTP_201_CREATED)
     except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"error","message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 # Login OTP
 @api_view(['POST'])
@@ -81,12 +81,12 @@ def login_user(request):
     password = request.data.get('password')
     
     if not username or not password:
-        return Response({"error": "Username and password required"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"error","message": "Username and password required"}, status=status.HTTP_400_BAD_REQUEST)
     
     user = authenticate(username=username, password=password)
 
     if not user:
-        return Response({"error": "Invalid credentials or user no exists"}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response({"status":"error","message": "Invalid credentials or user no exists"}, status=status.HTTP_401_UNAUTHORIZED)
 
     user_data = {
         "user_id": user.user_id,           # type: ignore
@@ -103,7 +103,7 @@ def login_user(request):
             "user": user_data,
         })
     
-    return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+    return Response({"status":"error","message": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
 ###########################################################################
 
@@ -123,16 +123,21 @@ def send_otp_email(user_email, otp):
 @api_view(['POST'])
 def forgot_password_sent_email(request):
     email = request.data.get("email")
+    if not email:
+        return Response({"status":"error", "message":"Please Enter Email"},status=status.HTTP_400_BAD_REQUEST)
     try:
         user = User.objects.get(email__iexact=email)
         otp = generate_otp()
         ForgotPasswordOTP.objects.create(user=user, otp=otp)
         send_otp_email(email, otp)
         activity(request.user, f"{request.user.username} requested for password reset.")
-        return Response({"message": "OTP sent to your email. Please check your Email box!"}, status=status.HTTP_200_OK)
+        return Response({"status":"success", "message": "OTP sent to your email. Please check your Email box!"}, status=status.HTTP_200_OK)
 
     except User.DoesNotExist:
-        return Response({"error": "User not exist"}, status= status.HTTP_404_NOT_FOUND)
+        return Response({"status":"error", "message": "User not exist"}, status= status.HTTP_404_NOT_FOUND)
+    
+    except Exception as e:
+        return Response({"status":"error", "message": str(e)}, status= status.HTTP_404_NOT_FOUND)
 
 # Reset Password 
 @api_view(['POST'])
@@ -141,15 +146,18 @@ def reset_password(request):
     otp = request.data.get("otp")
     new_password = request.data.get("new_password")
 
+    if not email or not otp or not new_password:
+        return Response({"status":"error", "message": "email, otp, new_password are required"}, status=status.HTTP_400_BAD_REQUEST)
+
     try:
         user = User.objects.get(email=email)
         otp_ = ForgotPasswordOTP.objects.filter(user=user, otp=otp, is_used=False).last()
 
         if not otp_:
-            return Response({"error": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"status":"error", "message": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
 
         if timezone.now() - otp_.created_at > timedelta(minutes=10):
-            return Response({"OTP expired"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"status":"error", "message":"OTP expired"}, status=status.HTTP_400_BAD_REQUEST)
 
         user.set_password(new_password)
         user.save()
@@ -157,10 +165,10 @@ def reset_password(request):
         otp_.is_used = True
         otp_.save()
         activity(request.user, f"{request.user.username} resetted password, username: {user.username}")
-        return Response({"Password reset successful"}, status=status.HTTP_200_OK)
+        return Response({"status":"success", "message":"Password reset successful"}, status=status.HTTP_200_OK)
+    
     except User.DoesNotExist:
- 
-        return Response({"Invalid email"}, status= status.HTTP_404_NOT_FOUND)
+        return Response({"status":"error", "message":"Invalid email"}, status= status.HTTP_404_NOT_FOUND)
 
 #############################################################################
 
@@ -170,6 +178,9 @@ def reset_password(request):
 def update_profile(request):
     try:    
         get_user_id = request.data.get('user_id')
+        if not get_user_id:
+            return Response({"status":"error", "message":"Please enter user_id"}, status=status.HTTP_400_BAD_REQUEST)
+        
         user_get = User.objects.get(user_id=get_user_id)
         data = request.data
         with transaction.atomic():
@@ -195,12 +206,12 @@ def update_profile(request):
             user_get.save()
             activity(request.user, f"{request.user.username} updated his profile: {user_get.username}")
             serializer = UserSerializer(user_get, many=True)
-            return Response({"message": "Buyer updated successfully","Updated User Data": serializer.data}, status=status.HTTP_200_OK)
+            return Response({"status":"success", "message": "Buyer updated successfully","Updated User Data": serializer.data}, status=status.HTTP_200_OK)
 
     except User.DoesNotExist:
-        return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"status":"error", "message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 # Delete Profile
 @api_view(['DELETE'])
@@ -208,18 +219,18 @@ def update_profile(request):
 def delete_profile(request):
     user_id = request.data.get('user_id')
     if not user_id:
-        return Response({"error": "enter User id please"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"error", "message": "enter User id please"}, status=status.HTTP_400_BAD_REQUEST)
     
     if not request.user.is_superuser and request.user.user_id != int(user_id):
-        return Response({"error": "Not authorized"}, status=status.HTTP_403_FORBIDDEN)
+        return Response({"status":"error", "message": "you can not delete others profile"}, status=status.HTTP_403_FORBIDDEN)
 
     try:
         user = User.objects.get(user_id = user_id)
         user.delete()
         activity(request.user, f"{request.user.username} deleted his profile: {user.username}")
-        return Response({"message": "User deleted"}, status=status.HTTP_200_OK)
+        return Response({"status":"success", "message": "User deleted"}, status=status.HTTP_200_OK)
     except User.DoesNotExist:
-        return Response({"error": "User not found"}, status= status.HTTP_404_NOT_FOUND)
+        return Response({"status":"error", "message": "User not found"}, status= status.HTTP_404_NOT_FOUND)
 
 # View All Users
 @api_view(['POST'])
@@ -227,7 +238,7 @@ def delete_profile(request):
 def search_view_all_users(request):
     try:
         if not request.user.is_superuser:
-            return Response({"error": "You do not have permission to view all users"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"status":"error", "message": "You do not have permission to view all users"}, status=status.HTTP_403_FORBIDDEN)
 
         username = request.data.get('username', '')
         email = request.data.get('email', '')
@@ -245,13 +256,13 @@ def search_view_all_users(request):
             users = users.filter(full_name__icontains=full_name)
         
         if not users.exists():
-            return Response({"message": "No users found matching the results"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"status":"error", "message": "No users found matching the results"}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = UserSerializer(users, many=True)
         activity(request.user, f"{request.user.username} viewed all users")
-        return Response({"Users Data": serializer.data}, status=status.HTTP_200_OK)
+        return Response({"status":"success", "Users Data": serializer.data}, status=status.HTTP_200_OK)
     except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 # view  my profile
 @api_view(['GET'])
@@ -260,12 +271,12 @@ def view_my_profile(request):
     user = request.user
     try:
         if not user:
-            return Response({"User Not Found or Not Exist!"}, status= status.HTTP_404_NOT_FOUND)
+            return Response({"status":"error", "message":"User Not Found or Not Exist!"}, status= status.HTTP_404_NOT_FOUND)
         serializer = UserSerializer(user)
         activity(request.user, f"{request.user.username} viewed his profile")
-        return Response({"Users Data": serializer.data}, status=status.HTTP_200_OK)
+        return Response({"status":"success", "Users Data": serializer.data}, status=status.HTTP_200_OK)
     except Exception as e:
-        return Response({"error":str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"error", "message":str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 # Function for Log activity
@@ -312,7 +323,7 @@ def create_comment(request):
     data = request.data
 
     if not data.get('tasklist_id') or not data.get('comment_text'):
-        return Response({"error": "Task list and comment text required"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"error", "message": "Task list and comment text required"}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
         task_list = TaskList.objects.get(tasklist_id=data['tasklist_id'])
@@ -341,7 +352,7 @@ def create_comment(request):
 def edit_comment(request):
 
     if not request.data.get('comment_id') or not request.data.get('comment_text'):
-        return Response({"error": "Comment ID and comment text required"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"error", "message": "Comment ID and comment text required"}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
         comment = Comment.objects.get(comment_id=request.data['comment_id'], user=request.user)
@@ -365,7 +376,7 @@ def edit_comment(request):
 def delete_comment(request):
 
     if not request.data.get('comment_id'):
-        return Response({"error": "Comment ID required"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"error", "message": "Comment ID required"}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
         comment = Comment.objects.get(comment_id=request.data['comment_id'], user=request.user)

@@ -45,17 +45,17 @@ def search_tasks_by(request):
                 queryset = queryset.filter(is_starred__icontains=is_starred)
 
         if not queryset.exists():
-                return Response({"message": "No matching Tasks found"}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"status":"error", "message": "No matching Tasks found"}, status=status.HTTP_404_NOT_FOUND)
         
         activity(request.user, f"{request.user.full_name} Searched Tasks")
         serializer = TaskCardSerializer(queryset, many=True)
-        return Response({"Task card": serializer.data}, status=status.HTTP_200_OK)
+        return Response({"status":"success", "Task card": serializer.data}, status=status.HTTP_200_OK)
 
     except TaskCard.DoesNotExist:
-        return Response({"status":"Task not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"status":"error", "message":"TaskCard not found"}, status=status.HTTP_404_NOT_FOUND)
     
     except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 # Sort lists of card by newest, oldest first and by Alphabet
 @api_view(['POST'])
@@ -65,11 +65,11 @@ def sort_task_lists(request):
     sort_by = request.data.get("sort_list_by")
     
     if not task_id:
-        return Response({"status": "fail", "error": "task_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"error", "message": "task_id is required"}, status=status.HTTP_400_BAD_REQUEST)
     try:
         queryset = TaskList.objects.filter(task_card_id=task_id)
     except TaskCard.DoesNotExist:
-        return Response({"status": "fail", "error": "TaskCard not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"status": "error", "message": "TaskCard not found"}, status=status.HTTP_404_NOT_FOUND)
 
     try:
         if sort_by == "newest_first":
@@ -98,22 +98,22 @@ def create_task(request):
     required_fields = ['title', 'description', 'board_id']
 
     if not all(field in data and data.get(field) for field in required_fields):
-        return Response({"error": "Please fill all required fields"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"error", "message": "Please fill all required fields"}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
         try:
             board = Board.objects.get(board_id=data.get("board_id"))
         except Board.DoesNotExist:
-            return Response({"error": "Board does not exist"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"status":"error", "message": "Board does not exist"}, status=status.HTTP_404_NOT_FOUND)
 
         if user not in board.members.all():
-            return Response({"error": "You are not a member of this board"}, status=status.HTTP_403_FORBIDDEN)
-        
+            return Response({"status":"error", "message": "You are not a member of this board"}, status=status.HTTP_403_FORBIDDEN)
+
         valid_status = ["pending", "doing", "Completed"]
         is_completed = data.get("is_completed", "pending")
 
         if is_completed not in valid_status:
-            return Response({"error": "Invalid task status."},status=status.HTTP_400_BAD_REQUEST)
+            return Response({"status":"error", "message": "Invalid task status."},status=status.HTTP_400_BAD_REQUEST)
 
         with transaction.atomic():
             task = TaskCard.objects.create(
@@ -126,11 +126,11 @@ def create_task(request):
             )
 
             activity(request.user, f"{request.user.full_name} created task: {task.title} in board: {board.title}")
-    
-            return Response({"message": "Task created successfully", "task_id": task.task_id}, status= status.HTTP_201_CREATED)
+
+            return Response({"status":"success", "message": "Task created successfully", "task_id": task.task_id}, status= status.HTTP_201_CREATED)
 
     except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 # Update Task Card
 @api_view(['PUT'])
@@ -139,17 +139,16 @@ def update_task(request):
 
     data = request.data
     task_id = data.get("task_id")
-
     if not task_id:
-        return Response({"error": "task_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"error", "message": "task_id is required"}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
         task_c = TaskCard.objects.get(task_id=task_id)
     except TaskCard.DoesNotExist:
-        return Response({"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"status":"error", "message": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
 
     if request.user != task_c.created_by:
-        return Response({"error": "You cannot edit this task"}, status=status.HTTP_403_FORBIDDEN)
+        return Response({"status":"error", "message": "You cannot edit this task"}, status=status.HTTP_403_FORBIDDEN)
 
     try:
         with transaction.atomic():  
@@ -167,41 +166,43 @@ def update_task(request):
             activity(request.user, f"Full_Name: {request.user.full_name}, updated task: {task_c.title} in board: {task_c.board.title}")
             
             serializer = TaskCardSerializer(task_c)
-            return Response({"message": "Task updated successfully", "Updated task Details":serializer.data}, status=status.HTTP_200_OK)  
+            return Response({"status":"success, Updated","Updated task Details":serializer.data}, status=status.HTTP_200_OK)
 
     except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
+        return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 # Task Card Delete
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
 def delete_task(request):
 
     task_id = request.data.get("task_id")
-
     if not task_id:
-        return Response({"Task ID is Required"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"error", "message": "Task ID is Required"}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
         task = TaskCard.objects.get(id=task_id)
         if request.user != task.created_by:
-            return Response({"error": "You cannot delete this task"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"status":"error", "message": "You cannot delete this task"}, status=status.HTTP_403_FORBIDDEN)
 
         task.delete()
         activity(request.user, f"{request.user.full_name} deleted task: {task.title} in board: {task.board.title}")
-        return Response({"message": "Task deleted successfully"}, status= status.HTTP_200_OK)
+        return Response({"status":"success", "message": "Task deleted successfully"}, status= status.HTTP_200_OK)
 
     except TaskCard.DoesNotExist:
-        return Response({"error": "Task not found"}, status= status.HTTP_404_NOT_FOUND)
-    
+        return Response({"status":"error", "message": "Task not found"}, status= status.HTTP_404_NOT_FOUND)
+
     except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"status":"error", "message": str(e)}, status=status.HTTP_404_NOT_FOUND)
 
 # Give Star To Task
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def star_task_card(request):
     task_id = request.data.get('task_id')
+    if not task_id:
+        return Response({"status":"error", "message":"please enter task_id"}, status=status.HTTP_400_BAD_REQUEST)
+
     try:
         task = TaskCard.objects.get(task_id=task_id)
         task.is_starred = not task.is_starred
@@ -209,13 +210,13 @@ def star_task_card(request):
 
         activity(request.user, f"{request.user.full_name} starred task: {task.title} in board: {task.board.title}")
 
-        return Response({"message": "Task star status updated", "is_starred": task.is_starred})
-    
+        return Response({"status":"success", "message": "Task star status updated", "is_starred": task.is_starred})
+
     except TaskCard.DoesNotExist:
-        return Response({"message": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
-    
+        return Response({"status":"error", "message": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
+
     except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"status":"error", "message": str(e)}, status=status.HTTP_404_NOT_FOUND)
 
 # Move task card to another board  OK
 @api_view(['POST'])
@@ -248,7 +249,7 @@ def move_task_card_to_other_board(request):
         return Response({"status":"error" ,"message": "board not found"}, status=status.HTTP_404_NOT_FOUND)
 
     except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 # Copy Tasks Card   OK
 @api_view(['POST'])
@@ -257,6 +258,9 @@ def copy_task_card(request):
 
     try:
         original_task_card_id = request.data.get("task_id")
+        if not original_task_card_id:
+            return Response({"status":"error", "message": "Task ID is Required"}, status=status.HTTP_400_BAD_REQUEST)
+        
         get_task_card = TaskCard.objects.get(task_id=original_task_card_id, created_by=request.user)
 
         # this will create a copy of the task card
@@ -318,7 +322,7 @@ def copy_task_card(request):
         return Response({"status": "error", "message": "Task Card not found"}, status=status.HTTP_404_NOT_FOUND)
 
     except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 ###########################################################################################################################################
 #          TASK LISTS         #############################################################################################################
@@ -330,10 +334,13 @@ def copy_task_card(request):
 def create_task_lists(request):
 
     get_task_id = request.data.get("task_id")
-    task = TaskCard.objects.get(task_id=get_task_id)
+    if not get_task_id:
+        return Response({"status":"error","message":"Please Enter task_id"}, status = status.HTTP_400_BAD_REQUEST)
 
-    if not task:
-        return Response({"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
+    try:
+        task = TaskCard.objects.get(task_id=get_task_id)
+    except TaskCard.DoesNotExist:
+        return Response({"status":"error", "message": "Entered TaskCard Not exist"}, status=status.HTTP_400_BAD_REQUEST)
 
     assigned_to_id = request.data.get("assigned_to")
     assigned_to_user = None
@@ -341,7 +348,7 @@ def create_task_lists(request):
         try:
             assigned_to_user = User.objects.get(user_id=assigned_to_id)
         except User.DoesNotExist:
-            return Response({"error": "Assigned user does not exist"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"status":"error", "message": "Assigned user does not exist"}, status=status.HTTP_400_BAD_REQUEST)
     
     try:
         with transaction.atomic():
@@ -366,10 +373,7 @@ def create_task_lists(request):
 
             activity(request.user, f"{request.user.full_name} created task list: {task_list.tasklist_title} in task: {task.title}")
             serializers = TaskListSerializer(task_list)
-            return Response({"Status":"Successfull", "message": "Task list created", "Task List Data": serializers.data}, status=status.HTTP_201_CREATED)
-
-    except TaskCard.DoesNotExist:
-        return Response({"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"atatus":"success", "message": "Task list created", "Task List Data": serializers.data}, status=status.HTTP_201_CREATED)
 
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -380,17 +384,23 @@ def create_task_lists(request):
 def update_tasks_lists(request):
 
     task_list_id = request.data.get("task_list_id")
+    if not task_list_id:
+        return Response({"status":"error", "message":"Please Enter task_list_id"}, status= status.HTTP_400_BAD_REQUEST)
 
     try:
        task_list = TaskList.objects.get(tasklist_id=task_list_id, created_by=request.user)
     except TaskList.DoesNotExist:
-        return Response({"error": "Task list not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"status":"error", "message": "Task list not found"}, status=status.HTTP_404_NOT_FOUND)
 
     if request.user != task_list.created_by:
-        return Response({"error": "You cannot edit this task"}, status=status.HTTP_403_FORBIDDEN)
+        return Response({"status":"error", "message": "You cannot edit this task"}, status=status.HTTP_403_FORBIDDEN)
+    
+    try:
+        task_image = TaskImage.objects.filter(tasks_lists_id=task_list).first()
+        task_attachment = TaskAttachment.objects.filter(tasks_lists_id=task_list).first()
 
-    task_image = TaskImage.objects.filter(tasks_lists_id=task_list).first()
-    task_attachment = TaskAttachment.objects.filter(tasks_lists_id=task_list).first()
+    except (TaskImage.DoesNotExist, TaskAttachment.DoesNotExist):
+        return Response({"status":"error", "message": "Task image or attachment not found"}, status=status.HTTP_404_NOT_FOUND)
 
     try:
         
@@ -426,10 +436,10 @@ def update_tasks_lists(request):
         activity(request.user, f"{request.user.full_name} updated task list: {task_list.tasklist_title} in task: {task_list.task_card.title}")
 
         serializers = TaskListSerializer(task_list)
-        return Response({"Status":"Successfull", "message": "Task list updated", "Task List Data": serializers.data}, status=status.HTTP_200_OK)
+        return Response({"status":"success", "message": "Task list updated", "Task List Data": serializers.data}, status=status.HTTP_200_OK)
 
     except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 #Tasks lists Delete
 @api_view(['DELETE'])
@@ -437,6 +447,8 @@ def update_tasks_lists(request):
 def tasks_lists_delete(request):
 
     get_task_list_id = request.data.get("task_list_id")
+    if not get_task_list_id:
+        return Response({"status":"error", "message":"Please Enter task_list_id"}, status= status.HTTP_400_BAD_REQUEST)
 
     try:
         task_list = TaskList.objects.get(tasklist_id=get_task_list_id, created_by=request.user)
@@ -454,7 +466,7 @@ def tasks_lists_delete(request):
         return Response({"status":"error", "message": "Task list not found"}, status=status.HTTP_404_NOT_FOUND)
 
     except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 # Copy task lists  OK
 @api_view(['POST'])
@@ -462,6 +474,9 @@ def tasks_lists_delete(request):
 def copy_task_list(request):
     try:
         original_task_list_id = request.data.get("task_list_id")
+        if not original_task_list_id:
+            return Response({"status":"error", "message":"Please Enter task_list_id"}, status= status.HTTP_400_BAD_REQUEST)
+        
         get_task_list = TaskList.objects.get(tasklist_id=original_task_list_id, created_by=request.user)
         
         with transaction.atomic():
@@ -519,6 +534,9 @@ def move_task_list(request):
     try:
         enter_tasklist_id = request.data.get("task_list_id")
         new_task_card_id = request.data.get("new_task_card_id")
+        
+        if not enter_tasklist_id or new_task_card_id:
+            return Response({"status":"success", "message":"Please enter task_list_id, new_task_card_id "}, status=status.HTTP_400_BAD_REQUEST)
 
         task_list = TaskList.objects.get(tasklist_id = enter_tasklist_id, created_by = request.user)
         new_task_card = TaskCard.objects.get(task_id = new_task_card_id, created_by = request.user)

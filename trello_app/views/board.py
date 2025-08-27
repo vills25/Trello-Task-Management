@@ -32,9 +32,10 @@ def create_board(request):
                 
             serializer = BoardSerializer(board)
             activity(request.user, f"{request.user.full_name} created Board: {board.title}")
-            return Response({"message": "Board created successfully", "Board Data": serializer.data}, status=status.HTTP_201_CREATED)
+            return Response({"status":"success", "message": "Board created successfully", "Board Data": serializer.data}, status=status.HTTP_201_CREATED)
+
     except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 #Update User Board
@@ -43,13 +44,16 @@ def create_board(request):
 def update_board(request):
     try:
         board_id = request.data.get("board_id")
+        if not board_id:
+            return Response({"status":"error", "message":"please enter board_id"}, status=status.HTTP_400_BAD_REQUEST)
+        
         board = Board.objects.get(board_id=board_id) 
     except Board.DoesNotExist:
-        return Response({"Error": "Board not found"}, status= status.HTTP_404_NOT_FOUND)
+        return Response({"status":"error", "message": "Board not found"}, status= status.HTTP_404_NOT_FOUND)
     
     if not board_id:
-        return Response({"Error": "board_id is required"},status=status.HTTP_400_BAD_REQUEST)
-    
+        return Response({"status":"error", "message": "board_id is required"},status=status.HTTP_400_BAD_REQUEST)
+
     data = request.data
     try:
          with transaction.atomic():
@@ -67,12 +71,13 @@ def update_board(request):
             board.save()
             activity(request.user, f'{request.user.full_name} updated board: {board.title}')
             serializer = BoardSerializer(board, many = True)
-            return Response({"message": "Board Updated successfully", "Board Data": serializer.data}, status=status.HTTP_200_OK)
-         
+            return Response({"status":"success", "message": "Board Updated successfully", "Board Data": serializer.data}, status=status.HTTP_200_OK)
+
     except Board.DoesNotExist:
-        return Response({"error": "Board not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"status":"error", "message": "Board not found"}, status=status.HTTP_404_NOT_FOUND)
+    
     except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 # Delete User Board
 @api_view(['DELETE'])
@@ -80,12 +85,17 @@ def update_board(request):
 def delete_board(request):
     try:
         board_id = request.data.get("board_id")
+        if not board_id:
+            return Response({"status":"error", "message":"please enter board_id"}, status=status.HTTP_400_BAD_REQUEST)
+        
         board = Board.objects.get(board_id=board_id, created_by=request.user)
+
         board.delete()
         activity(request.user, f"{request.user.full_name} Deleted Board : {board.title}")
-        return Response({"message": "Board deleted successfully"}, status=status.HTTP_200_OK)
+
+        return Response({"status":"success", "message": "Board deleted successfully"}, status=status.HTTP_200_OK)
     except Board.DoesNotExist:
-        return Response({"error": "Board not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"status":"error", "message": "Board not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
 # Add/Assign Member to Board
@@ -102,11 +112,13 @@ def add_member_to_board(request):
         board.members.add(*user)
         activity(request.user, f"{request.user.username} added members to board, title: {board.title}")
 
-        return Response({"message": f"{user.count()} members added to board"}, status=status.HTTP_200_OK)
+        return Response({"status":"success", "message": f"{user.count()} members added to board"}, status=status.HTTP_200_OK)
+    
     except Board.DoesNotExist:
-        return Response({"error": "Board not found or access denied"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"status":"error", "message": "Board not found or access denied"}, status=status.HTTP_404_NOT_FOUND)
+    
     except User.DoesNotExist:
-        return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"status":"error", "message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
 # Remove member from board
@@ -124,11 +136,16 @@ def remove_member_from_board(request):
 
         activity(request.user, f"{request.user.full_name} removed {user.username} from board, title: {board.title}")
         
-        return Response({"message": f"{user.username} removed from board"}, status=status.HTTP_200_OK)
+        return Response({"status":"success", "message": f"{user.username} removed from board"}, status=status.HTTP_200_OK)
+    
     except Board.DoesNotExist:
-        return Response({"error": "Board not found or access denied"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"status":"error", "message": "Board not found"}, status=status.HTTP_404_NOT_FOUND)
+
     except User.DoesNotExist:
-        return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"status":"error", "message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    except Exception as e:
+        return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 # View Board members
 @api_view(['GET'])
@@ -136,10 +153,12 @@ def remove_member_from_board(request):
 def view_board_members(request):
     try:
         board_id = request.data.get("board_id")
+        if not board_id:
+            return Response({"status":"error", "message":"please enter board_id"}, status=status.HTTP_400_BAD_REQUEST)
         board = Board.objects.get(board_id=board_id)
 
         if request.user not in board.members.all():
-            return Response({"error": "You are not a member of this board"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"status":"error", "message": "You are not a member of this board"}, status=status.HTTP_403_FORBIDDEN)
 
         members_data = []
         for member in board.members.all():
@@ -149,20 +168,20 @@ def view_board_members(request):
                 "email": member.email
             })
         activity(request.user, f"{request.user.full_name} viewed members of board, Title: {board.title}")
-        return Response({"Members in your Task Board":members_data}, status=status.HTTP_200_OK)
+        return Response({"status":"success", "Members in your Board":members_data}, status=status.HTTP_200_OK)
     except Board.DoesNotExist:
-        return Response({"error": "Task Board not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"status":"error", "message": "Board not found"}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 #View for full board details
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def get_my_board(request):
 
-    try:
-        
+    try:        
         board_id = request.data.get('board_id')
+
         today = timezone.now().date()
         tomorrow = today + timedelta(days=1)
         this_week =  today - timedelta(days=today.weekday())
@@ -186,12 +205,12 @@ def get_my_board(request):
             activity(request.user, f"{request.user.full_name} viewed boards")
 
             serializer = BoardSerializer(boards, many=True)
-            return Response({"Message": "Successfull", "Board data": serializer.data}, status=status.HTTP_200_OK)
+            return Response({"status":"success", "Board data": serializer.data}, status=status.HTTP_200_OK)
 
         try:
             board = Board.objects.get(board_id=board_id, members=request.user)
         except Board.DoesNotExist:
-            return Response({"error": "Board not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"status":"error", "message": "Board not found"}, status=status.HTTP_404_NOT_FOUND)
 
         members = board.members.all()
         
@@ -311,10 +330,10 @@ def get_my_board(request):
                 "Task Lists": task_list_data,
             })
         activity(request.user, f"{request.user.full_name} performed action on board, board title: {board.title}")
-        return Response({"message": "Successfull", "Taskboard data": board_data}, status=status.HTTP_200_OK)
-    
+        return Response({"status":"success", "Board data": board_data}, status=status.HTTP_200_OK)
+
     except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({"status":"error", "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # Search Board members.
@@ -335,20 +354,23 @@ def search_boards(request):
             queryset = queryset.filter(visibility__icontains=data['visibility'])
     
         if not queryset.exists():
-            return Response({"message": "No matching Boards found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"status":"error", "message": "No matching Boards found"}, status=status.HTTP_404_NOT_FOUND)
 
         activity(request.user, f"{request.user.full_name} Searched Boards")
         serializer = BoardSerializer(queryset, many=True)
-        return Response({"Task Board Data": serializer.data}, status=status.HTTP_200_OK)
-    
+        return Response({"status":"success", "Board Data": serializer.data}, status=status.HTTP_200_OK)
+
     except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 # Give Star To Board
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def star_board(request):
     board_id = request.data.get('board_id')
+    if not board_id:
+        return Response({"status":"error", "message":"please enter board_id"}, status=status.HTTP_400_BAD_REQUEST)
+    
     try:
         board = Board.objects.get(board_id=board_id, members=request.user)
         board.is_starred = not board.is_starred
@@ -356,11 +378,11 @@ def star_board(request):
 
         activity(request.user, f"{request.user.full_name} updated Star status of Board: {board.title} - {'Starred' if board.is_starred else 'Unstarred'}")
 
-        return Response({"message": "Board star status updated", "is_starred": board.is_starred})
-    
+        return Response({"status":"success", "message": "Board star status updated", "is_starred": board.is_starred})
+
     except Board.DoesNotExist:
-        return Response({"error": "Board not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"status":"error", "message": "Board not found"}, status=status.HTTP_404_NOT_FOUND)
     
     except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
