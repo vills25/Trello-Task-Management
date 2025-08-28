@@ -556,4 +556,4 @@ def move_task_list(request):
         return Response({"status":"error", "message": "New task card not found"}, status=status.HTTP_404_NOT_FOUND)
 
     except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)

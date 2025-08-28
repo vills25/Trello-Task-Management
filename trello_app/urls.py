@@ -30,6 +30,8 @@ urlpatterns = [
     path('get_my_board/', get_my_board),
     path('search_boards/', search_boards),
     path('star_board/', star_board),
+    path('print_export_share/', print_export_share),
+    path('share_invite/', share_invite),
 
     # TaskCard Urls
     path('create_task/', create_task),
@@ -39,6 +41,7 @@ urlpatterns = [
     path('star_task_card/', star_task_card),
     path('copy_task_card/', copy_task_card),
     path('move_task_card_to_other_board/', move_task_card_to_other_board),
+    # path('position/', position),
 
     # TaskList Urls
     path('create_task_lists/', create_task_lists),

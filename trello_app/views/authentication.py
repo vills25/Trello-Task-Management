@@ -11,6 +11,7 @@ from django.core.mail import send_mail
 from trello_app.models import *
 from trello_app.serializers import *
 import random
+    
 # from rest_framework import permissions
 # from django.shortcuts import get_object_or_404
 
@@ -98,10 +99,7 @@ def login_user(request):
         refresh = RefreshToken.for_user(user)
         activity(user, f"{user.username} logged in.")
 
-        return Response({
-            "access": str(refresh.access_token),
-            "user": user_data,
-        })
+        return Response({"status":"Login Successfull","access": str(refresh.access_token), "user": user_data,})
     
     return Response({"status":"error","message": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 

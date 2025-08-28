@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'django_filters',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
+    # 'import_export',
 ]
 
 AUTH_USER_MODEL = 'trello_app.User'

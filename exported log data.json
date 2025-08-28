@@ -1,182 +1,226 @@
 [
 	{
-		"id" : 1,
-		"date_time" : "2025-08-19 09:45:26.773707",
-		"Details" : "User logged in: asus",
-		"user_id" : 1
+		"tasklist_id" : 1,
+		"tasklist_title" : "Define campaign goals",
+		"tasklist_description" : "Set SMART goals for holiday launch.",
+		"priority" : "High",
+		"label_color" : "red",
+		"start_date" : "2025-09-01",
+		"due_date" : "2025-09-05",
+		"is_completed" : 0,
+		"created_at" : "2025-08-27 04:39:29.199718",
+		"updated_at" : "2025-08-27 04:39:29.199718",
+		"assigned_to_id" : null,
+		"created_by_id" : 3,
+		"task_card_id" : 1,
+		"updated_by_id" : null
 	},
 	{
-		"id" : 2,
-		"date_time" : "2025-08-19 09:49:07.349407",
-		"Details" : "User logged in: @rajat123",
-		"user_id" : 2
+		"tasklist_id" : 2,
+		"tasklist_title" : "Content planning",
+		"tasklist_description" : "Decide creatives, copies, and video ads",
+		"priority" : "Medium",
+		"label_color" : "blue",
+		"start_date" : "2025-09-06",
+		"due_date" : "2025-09-12",
+		"is_completed" : 0,
+		"created_at" : "2025-08-27 04:44:16.862550",
+		"updated_at" : "2025-08-27 04:44:16.862550",
+		"assigned_to_id" : 3,
+		"created_by_id" : 3,
+		"task_card_id" : 1,
+		"updated_by_id" : null
 	},
 	{
-		"id" : 3,
-		"date_time" : "2025-08-19 10:05:51.014389",
-		"Details" : "User logged in: ryan_scott",
-		"user_id" : 22
+		"tasklist_id" : 3,
+		"tasklist_title" : "Platform research",
+		"tasklist_description" : "Check audience activity on Insta, LinkedIn, Twitter.",
+		"priority" : "Medium",
+		"label_color" : "green",
+		"start_date" : "2025-09-05",
+		"due_date" : "2025-09-08",
+		"is_completed" : 0,
+		"created_at" : "2025-08-27 04:46:36.042224",
+		"updated_at" : "2025-08-27 04:46:36.042224",
+		"assigned_to_id" : 5,
+		"created_by_id" : 3,
+		"task_card_id" : 2,
+		"updated_by_id" : null
 	},
 	{
-		"id" : 5,
-		"date_time" : "2025-08-19 10:23:24.207698",
-		"Details" : "User updated task: Support Team Training in board: Customer Support Training ryan second board",
-		"user_id" : 22
+		"tasklist_id" : 4,
+		"tasklist_title" : "Calendar creation",
+		"tasklist_description" : "Schedule daily posts for 3 months.",
+		"priority" : "High",
+		"label_color" : "yellow",
+		"start_date" : "2025-09-09",
+		"due_date" : "2025-09-20",
+		"is_completed" : 0,
+		"created_at" : "2025-08-27 04:47:30.596197",
+		"updated_at" : "2025-08-27 04:47:30.596197",
+		"assigned_to_id" : 4,
+		"created_by_id" : 3,
+		"task_card_id" : 2,
+		"updated_by_id" : null
 	},
 	{
-		"id" : 6,
-		"date_time" : "2025-08-19 10:24:03.858372",
-		"Details" : "User updated task: Support Team Training in board: Customer Support Training ryan second board",
-		"user_id" : 22
+		"tasklist_id" : 5,
+		"tasklist_title" : "Audience segmentation",
+		"tasklist_description" : "Define age, location, and interest-based targeting.",
+		"priority" : "High",
+		"label_color" : "orange",
+		"start_date" : "2025-09-10",
+		"due_date" : "2025-09-12",
+		"is_completed" : 0,
+		"created_at" : "2025-08-27 04:48:44.031476",
+		"updated_at" : "2025-08-27 04:48:44.031476",
+		"assigned_to_id" : 4,
+		"created_by_id" : 3,
+		"task_card_id" : 3,
+		"updated_by_id" : null
 	},
 	{
-		"id" : 7,
-		"date_time" : "2025-08-19 10:26:38.467134",
-		"Details" : "User updated task: Support Team Training in board: Customer Support Training ryan second board",
-		"user_id" : 22
+		"tasklist_id" : 6,
+		"tasklist_title" : "Ad creatives design",
+		"tasklist_description" : "Prepare banners and short videos for ads.",
+		"priority" : "Medium",
+		"label_color" : "blue",
+		"start_date" : "2025-09-13",
+		"due_date" : "2025-09-17",
+		"is_completed" : 0,
+		"created_at" : "2025-08-27 04:49:31.769261",
+		"updated_at" : "2025-08-27 04:49:31.769261",
+		"assigned_to_id" : 3,
+		"created_by_id" : 3,
+		"task_card_id" : 3,
+		"updated_by_id" : null
 	},
 	{
-		"id" : 8,
-		"date_time" : "2025-08-19 10:26:50.046669",
-		"Details" : "User updated task: Support Team Training in board: Customer Support Training ryan second board",
-		"user_id" : 22
+		"tasklist_id" : 7,
+		"tasklist_title" : "Survey draft",
+		"tasklist_description" : "Prepare questions for product feedback.",
+		"priority" : "Low",
+		"label_color" : "purple",
+		"start_date" : "2025-09-20",
+		"due_date" : "2025-09-22",
+		"is_completed" : 0,
+		"created_at" : "2025-08-27 04:49:49.162348",
+		"updated_at" : "2025-08-27 04:55:07.631342",
+		"assigned_to_id" : 3,
+		"created_by_id" : 3,
+		"task_card_id" : 4,
+		"updated_by_id" : null
 	},
 	{
-		"id" : 9,
-		"date_time" : "2025-08-19 10:27:45.832756",
-		"Details" : "User updated task: Support Team Training in board: Customer Support Training ryan second board",
-		"user_id" : 22
+		"tasklist_id" : 8,
+		"tasklist_title" : "Survey distribution",
+		"tasklist_description" : "Send via email & WhatsApp campaign.",
+		"priority" : "Medium",
+		"label_color" : "cyan",
+		"start_date" : "2025-09-23",
+		"due_date" : "2025-09-28",
+		"is_completed" : 0,
+		"created_at" : "2025-08-27 04:50:17.761210",
+		"updated_at" : "2025-08-27 04:55:22.422851",
+		"assigned_to_id" : 4,
+		"created_by_id" : 3,
+		"task_card_id" : 4,
+		"updated_by_id" : null
 	},
 	{
-		"id" : 10,
-		"date_time" : "2025-08-19 10:27:48.490788",
-		"Details" : "User updated task: Support Team Training in board: Customer Support Training ryan second board",
-		"user_id" : 22
+		"tasklist_id" : 9,
+		"tasklist_title" : "Core Python Basics",
+		"tasklist_description" : "Variables, Data types, Operators, Control flow",
+		"priority" : "High",
+		"label_color" : "blue",
+		"start_date" : "2025-09-01",
+		"due_date" : "2025-09-07",
+		"is_completed" : 0,
+		"created_at" : "2025-08-27 05:20:38.887669",
+		"updated_at" : "2025-08-27 05:20:38.887669",
+		"assigned_to_id" : 6,
+		"created_by_id" : 3,
+		"task_card_id" : 5,
+		"updated_by_id" : null
 	},
 	{
-		"id" : 11,
-		"date_time" : "2025-08-19 10:28:02.345339",
-		"Details" : "User updated task: Support Team Training in board: Customer Support Training ryan second board",
-		"user_id" : 22
+		"tasklist_id" : 10,
+		"tasklist_title" : "OOP in Python",
+		"tasklist_description" : "Classes, Objects, Inheritance, Polymorphism",
+		"priority" : "High",
+		"label_color" : "green",
+		"start_date" : "2025-09-08",
+		"due_date" : "2025-09-14",
+		"is_completed" : 0,
+		"created_at" : "2025-08-27 05:21:43.716117",
+		"updated_at" : "2025-08-27 05:21:43.716117",
+		"assigned_to_id" : 7,
+		"created_by_id" : 3,
+		"task_card_id" : 5,
+		"updated_by_id" : null
 	},
 	{
-		"id" : 12,
-		"date_time" : "2025-08-19 10:28:50.703370",
-		"Details" : "User updated task: Support Team Training in board: Customer Support Training ryan second board",
-		"user_id" : 22
+		"tasklist_id" : 11,
+		"tasklist_title" : "Advanced Python",
+		"tasklist_description" : "Decorators, Generators, Context Managers, Memory Mgmt",
+		"priority" : "Medium",
+		"label_color" : "orange",
+		"start_date" : "2025-09-15",
+		"due_date" : "2025-09-20",
+		"is_completed" : 0,
+		"created_at" : "2025-08-27 05:22:27.458517",
+		"updated_at" : "2025-08-27 05:22:27.458517",
+		"assigned_to_id" : 7,
+		"created_by_id" : 3,
+		"task_card_id" : 5,
+		"updated_by_id" : null
 	},
 	{
-		"id" : 13,
-		"date_time" : "2025-08-19 10:28:52.817800",
-		"Details" : "User updated task: Support Team Training in board: Customer Support Training ryan second board",
-		"user_id" : 22
+		"tasklist_id" : 12,
+		"tasklist_title" : "Django REST Basics",
+		"tasklist_description" : "Models, Views, Serializers, API Endpoints",
+		"priority" : "High",
+		"label_color" : "red",
+		"start_date" : "2025-09-10",
+		"due_date" : "2025-09-15",
+		"is_completed" : 0,
+		"created_at" : "2025-08-27 05:23:08.889142",
+		"updated_at" : "2025-08-27 05:23:08.889142",
+		"assigned_to_id" : 6,
+		"created_by_id" : 3,
+		"task_card_id" : 6,
+		"updated_by_id" : null
 	},
 	{
-		"id" : 14,
-		"date_time" : "2025-08-19 10:33:34.154218",
-		"Details" : "User updated task: Support Team Training in board: Customer Support Training ryan second board",
-		"user_id" : 22
+		"tasklist_id" : 13,
+		"tasklist_title" : "JWT Authentication",
+		"tasklist_description" : "Implement JWT auth in Django + secure endpoints",
+		"priority" : "High",
+		"label_color" : "yellow",
+		"start_date" : "2025-09-16",
+		"due_date" : "2025-09-20",
+		"is_completed" : 0,
+		"created_at" : "2025-08-27 05:23:29.878307",
+		"updated_at" : "2025-08-27 05:23:29.878307",
+		"assigned_to_id" : 5,
+		"created_by_id" : 3,
+		"task_card_id" : 6,
+		"updated_by_id" : null
 	},
 	{
-		"id" : 15,
-		"date_time" : "2025-08-19 12:08:47.909126",
-		"Details" : "User logged in, username: ryan_scott",
-		"user_id" : 22
-	},
-	{
-		"id" : 16,
-		"date_time" : "2025-08-19 12:09:52.540214",
-		"Details" : "User \"ryan_scott\" logged in.",
-		"user_id" : 22
-	},
-	{
-		"id" : 17,
-		"date_time" : "2025-08-19 12:22:32.956224",
-		"Details" : "User \"ryan_scott\" logged in.",
-		"user_id" : 22
-	},
-	{
-		"id" : 18,
-		"date_time" : "2025-08-19 12:22:47.514814",
-		"Details" : "ryan_scott viewed members of board, Title: Website Redesign",
-		"user_id" : 22
-	},
-	{
-		"id" : 19,
-		"date_time" : "2025-08-19 12:28:21.623944",
-		"Details" : "ryan_scott removed johndoe89 from board, title: Website Redesign",
-		"user_id" : 22
-	},
-	{
-		"id" : 20,
-		"date_time" : "2025-08-19 17:35:56.080921",
-		"Details" : "imroz registered, fullname: Imroz Khan",
-		"user_id" : 31
-	},
-	{
-		"id" : 21,
-		"date_time" : "2025-08-19 17:38:39.076008",
-		"Details" : " \"imroz\" logged in.",
-		"user_id" : 31
-	},
-	{
-		"id" : 22,
-		"date_time" : "2025-08-19 17:40:29.302214",
-		"Details" : "imroz logged in.",
-		"user_id" : 31
-	},
-	{
-		"id" : 23,
-		"date_time" : "2025-08-19 17:41:34.189018",
-		"Details" : "ryan_scott logged in.",
-		"user_id" : 22
-	},
-	{
-		"id" : 24,
-		"date_time" : "2025-08-19 17:42:59.661220",
-		"Details" : "imroz logged in.",
-		"user_id" : 31
-	},
-	{
-		"id" : 26,
-		"date_time" : "2025-08-19 17:46:07.392954",
-		"Details" : "imroz created Board: Imroz bhai ka Board",
-		"user_id" : 31
-	},
-	{
-		"id" : 27,
-		"date_time" : "2025-08-19 18:07:49.672570",
-		"Details" : "ryan_scott logged in.",
-		"user_id" : 22
-	},
-	{
-		"id" : 28,
-		"date_time" : "2025-08-19 18:08:09.263837",
-		"Details" : "ryan_scott viewed members of board, Title: Website Redesign",
-		"user_id" : 22
-	},
-	{
-		"id" : 29,
-		"date_time" : "2025-08-19 18:08:45.728872",
-		"Details" : "rahul logged in.",
-		"user_id" : 5
-	},
-	{
-		"id" : 30,
-		"date_time" : "2025-08-19 18:09:11.860822",
-		"Details" : "rahul viewed boards",
-		"user_id" : 5
-	},
-	{
-		"id" : 31,
-		"date_time" : "2025-08-19 18:10:51.554288",
-		"Details" : "rahul created Board: Rahul bhai ka Board",
-		"user_id" : 5
-	},
-	{
-		"id" : 32,
-		"date_time" : "2025-08-19 18:11:54.564681",
-		"Details" : "rahul Searched Tasks",
-		"user_id" : 5
+		"tasklist_id" : 14,
+		"tasklist_title" : "React Frontend Connect",
+		"tasklist_description" : "Setup React app, connect APIs, fetch data",
+		"priority" : "Medium",
+		"label_color" : "purple",
+		"start_date" : "2025-09-21",
+		"due_date" : "2025-09-25",
+		"is_completed" : 0,
+		"created_at" : "2025-08-27 05:23:52.048193",
+		"updated_at" : "2025-08-27 05:23:52.048193",
+		"assigned_to_id" : 7,
+		"created_by_id" : 3,
+		"task_card_id" : 6,
+		"updated_by_id" : null
 	}
 ]

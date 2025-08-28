@@ -8,6 +8,17 @@ from trello_app.serializers import *
 from datetime import date, timedelta
 from django.utils import timezone
 from .authentication import activity
+import csv, io, pandas as datetime
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+import pandas as pd
+# from pypdf import PdfReader, PdfWriter
+import os
+from django.conf import settings
+from django.core.mail import send_mail
+import json
 
 # Create User Board
 @api_view(['POST'])
@@ -107,15 +118,20 @@ def add_member_to_board(request):
         user_emails = request.data.get("email")
 
         board = Board.objects.get(board_id=board_id, created_by=request.user)
-        user = User.objects.filter(email__in=user_emails)
+        print("=========>>>>>>>>>", board)
+        user_emails = [e.strip().lower() for e in user_emails]
+        found_users = User.objects.filter(email__in=user_emails)
+        print("=========>>>>>>>>>", found_users)
+        found_emails = set(found_users.values_list("email", flat=True))
+        print("=========>>>>>>>>>", found_users)
+        not_found = [e for e in user_emails if e not in found_emails]
+        print("=========>>>>>>>>>", not_found)
 
-        board.members.add(*user)
-        activity(request.user, f"{request.user.username} added members to board, title: {board.title}")
+        if found_users:
+            board.members.add(*found_users)
+            activity(request.user, f"{request.user.username} added members to board, title: {board.title}")
 
-        return Response({"status":"success", "message": f"{user.count()} members added to board"}, status=status.HTTP_200_OK)
-    
-    except Board.DoesNotExist:
-        return Response({"status":"error", "message": "Board not found or access denied"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"status": "success","message": f"{found_users.count()} members added","not_found": not_found}, status=status.HTTP_200_OK)
     
     except User.DoesNotExist:
         return Response({"status":"error", "message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -385,4 +401,146 @@ def star_board(request):
     
     except Exception as e:
         return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
 
+# Print, Export as PDF, Json, CSV, and share functionality
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def print_export_share(request):
+    user = request.user
+    task_id = request.data.get("task_id")
+    export_format = request.data.get("format").lower()
+    
+    if not task_id:
+        return Response({"status": "error", "message": "Task ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        tasks = TaskCard.objects.get(task_id=task_id, created_by=user)
+
+        ##### JSON #####
+        if export_format == "json":
+            serializer = TaskCardSerializer(tasks)
+            file_name = f"boards_task{task_id}.json"
+            file_path = os.path.join(settings.MEDIA_ROOT, "exports", file_name)
+
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            with open(file_path, 'w') as json_file:
+                json.dump(serializer.data, json_file)
+            return Response({"status": "success", "message": f"json file location {file_path}"}, status=status.HTTP_200_OK,)
+
+        ##### CSV #####
+        if export_format == "csv":
+            file_name = f"boards_task{task_id}.csv"
+            file_path = os.path.join(settings.MEDIA_ROOT, "exports", file_name)
+
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
+            with open(file_path, 'w', newline='') as csv_file:
+                writer = csv.writer(csv_file)
+                writer.writerow(["Task ID", "Title", "Description", "Board", "Status"])
+                writer.writerow([tasks.task_id, tasks.title, tasks.description, tasks.board.title, tasks.is_completed])
+
+            return Response({"status": "success", "message": f"CSV file location {file_path}"}, status=status.HTTP_200_OK)
+
+        ##### PDF #####
+        elif export_format == "pdf":
+            file_name = f"task_{task_id}.pdf"
+            file_path = os.path.join(settings.MEDIA_ROOT, "exports", file_name)
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
+            data = [
+                ["Task Report", ""],
+                ["Task ID", str(tasks.task_id)],
+                ["Title", tasks.title],
+                ["Description", tasks.description],
+                ["Board", tasks.board.title],
+                ["Status", tasks.is_completed],
+            ]
+
+            pdf = SimpleDocTemplate(file_path, pagesize=A4)
+
+            table = Table(data, colWidths=[120, 350])
+            table.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (-1, 0), colors.lightblue),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, 0), 14),
+                ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
+                ("BACKGROUND", (0, 1), (-1, -1), colors.whitesmoke),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ]))
+
+            pdf.build([table])
+
+            return Response({"status": "success", "message": f"PDF file location {file_path}"}, status=status.HTTP_200_OK,)
+
+        ##### EXCEL #####
+        elif export_format == "excel":
+
+            file_name = f"boards_task{task_id}.xlsx"
+            file_path = os.path.join(settings.MEDIA_ROOT, "exports", file_name)
+
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
+            boards = Board.objects.filter(created_by=user)
+            rows = []
+            for board in boards:
+                for task in board.task_cards.all():
+                    rows.append({
+                        "Board Title": board.title,
+                        "Board Description": board.description,
+                        "Task ID": task.task_id,
+                        "Task Title": task.title,
+                        "Task Description": task.description,
+                        # "Created At": task.created_at.strftime("%Y-%m-%d %H:%M"),
+                        "Status": task.is_completed,
+                    })
+
+            df = pd.DataFrame(rows)
+            df.to_excel(file_path, index=False, engine='openpyxl')
+
+            return Response({"status": "success", "message": f"excel file location {file_path}"}, status=status.HTTP_200_OK)
+
+        else:
+            return Response({"status": "error", "message": "Invalid format"}, status=status.HTTP_400_BAD_REQUEST)
+
+    except TaskCard.DoesNotExist:
+        return Response({"status": "error", "message": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    except Exception as e:
+        return Response({"status": "error", "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+# Share Board/Invite member to board via email, generate link and send email
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def share_invite(request):
+    try:
+        board_id = request.data.get("board_id")
+        email = request.data.get("email")
+
+        if not board_id or not email:
+            return Response({"status":"error", "message":"please provide board_id and email"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        board = Board.objects.get(board_id=board_id)
+        user = User.objects.get(email=email)
+
+        link = f"http://trellotaskmanagement.com/invite?board_id={board.board_id}&email={user.email}"
+        send_mail(
+            subject=f"link for join board: {board.title}",
+            message=f"click the link for join the board: {link}",
+            from_email=settings.EMAIL_HOST_USER,
+            recipient_list=[email],)
+        
+        activity(request.user, f"{request.user.full_name} invited {user.username} to board, Title: {board.title}")
+        
+        return Response({"status":"success", "message": f"Invitation sent to {email}", "invitation_link": link}, status=status.HTTP_200_OK)
+    
+    except Board.DoesNotExist:
+        return Response({"status":"error", "message": "Board not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    except User.DoesNotExist:
+        return Response({"status":"error", "message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    except Exception as e:
+        return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)

@@ -1,0 +1,68 @@
+{
+  "is_starred": false,
+  "task_id": 1,
+  "board": 3,
+  "title": "Q4 Marketing Launch",
+  "description": "Plan and execute holiday marketing campaign for Q4.",
+  "is_completed": "pending",
+  "created_at": "26-08-2025 18:20:30",
+  "created_by": "@arjun03",
+  "updated_at": "26-08-2025 18:20:30",
+  "updated_by": "@arjun03",
+  "task_lists": [
+    {
+      "tasklist_id": 1,
+      "task_card": 1,
+      "tasklist_title": "Define campaign goals",
+      "tasklist_description": "Set SMART goals for holiday launch.",
+      "priority": "High",
+      "label_color": "red",
+      "start_date": "2025-09-01",
+      "due_date": "2025-09-05",
+      "created_at": "27-08-2025 10:09:29",
+      "created_by": "@arjun03",
+      "updated_at": "27-08-2025 10:09:29",
+      "is_completed": false,
+      "updated_by": null,
+      "image": [],
+      "attachment": [],
+      "comments": [],
+      "assigned_to": null
+    },
+    {
+      "tasklist_id": 2,
+      "task_card": 1,
+      "tasklist_title": "Content planning",
+      "tasklist_description": "Decide creatives, copies, and video ads",
+      "priority": "Medium",
+      "label_color": "blue",
+      "start_date": "2025-09-06",
+      "due_date": "2025-09-12",
+      "created_at": "27-08-2025 10:14:16",
+      "created_by": "@arjun03",
+      "updated_at": "27-08-2025 10:14:16",
+      "is_completed": false,
+      "updated_by": null,
+      "image": [
+        {
+          "task_image_id": 1,
+          "tasks_lists_id": 2,
+          "task_image": "/media/task_images/lake_night_starry_sky_143961_2560x1440_yROnRRU.jpg",
+          "uploaded_at": "27-08-2025 10:14:16",
+          "updated_at": "27-08-2025 10:14:16"
+        }
+      ],
+      "attachment": [
+        {
+          "task_attachment_id": 1,
+          "tasks_lists_id": 2,
+          "task_attachment": "/media/task_attachment/20250713_OHR.YoungShark_EN-IN1362768509_UHD_bing.jpg",
+          "uploaded_at": "27-08-2025 10:14:16",
+          "updated_at": "27-08-2025 10:14:16"
+        }
+      ],
+      "comments": [],
+      "assigned_to": { "user_id": 3, "full_name": "Arjun Sharma" }
+    }
+  ]
+}
