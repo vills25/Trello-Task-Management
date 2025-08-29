@@ -32,6 +32,7 @@ urlpatterns = [
     path('star_board/', star_board),
     path('print_export_share/', print_export_share),
     path('share_invite/', share_invite),
+    path('notifications/', notifications),
 
     # TaskCard Urls
     path('create_task/', create_task),

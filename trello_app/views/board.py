@@ -9,16 +9,15 @@ from datetime import date, timedelta
 from django.utils import timezone
 from .authentication import activity
 import csv, io, pandas as datetime
-from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 import pandas as pd
-# from pypdf import PdfReader, PdfWriter
 import os
 from django.conf import settings
 from django.core.mail import send_mail
 import json
+from django.db.models import Q
 
 # Create User Board
 @api_view(['POST'])
@@ -61,9 +60,9 @@ def update_board(request):
         board = Board.objects.get(board_id=board_id) 
     except Board.DoesNotExist:
         return Response({"status":"error", "message": "Board not found"}, status= status.HTTP_404_NOT_FOUND)
-    
-    if not board_id:
-        return Response({"status":"error", "message": "board_id is required"},status=status.HTTP_400_BAD_REQUEST)
+
+    if board.created_by != request.user:
+        return Response({"status": "error", "message": "you can not update other's boards."}, status=status.HTTP_403_FORBIDDEN)
 
     data = request.data
     try:
@@ -100,6 +99,8 @@ def delete_board(request):
             return Response({"status":"error", "message":"please enter board_id"}, status=status.HTTP_400_BAD_REQUEST)
         
         board = Board.objects.get(board_id=board_id, created_by=request.user)
+        if board.created_by != request.user:
+            return Response({"status": "error", "message": "you can not delete the board"}, status=status.HTTP_403_FORBIDDEN)
 
         board.delete()
         activity(request.user, f"{request.user.full_name} Deleted Board : {board.title}")
@@ -116,16 +117,20 @@ def add_member_to_board(request):
     try:
         board_id = request.data.get("board_id")
         user_emails = request.data.get("email")
+        
+        if not board_id or not user_emails:
+            return Response({"status": "error", "message": "Please provide board_id and user emails"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.is_superuser and not Board.objects.filter(board_id=board_id, created_by=request.user).exists():
+            return Response({"status": "error", "message": "Only superusers or board admins can add members to boards"},
+                              status=status.HTTP_403_FORBIDDEN)
 
         board = Board.objects.get(board_id=board_id, created_by=request.user)
-        print("=========>>>>>>>>>", board)
+        
         user_emails = [e.strip().lower() for e in user_emails]
         found_users = User.objects.filter(email__in=user_emails)
-        print("=========>>>>>>>>>", found_users)
         found_emails = set(found_users.values_list("email", flat=True))
-        print("=========>>>>>>>>>", found_users)
         not_found = [e for e in user_emails if e not in found_emails]
-        print("=========>>>>>>>>>", not_found)
 
         if found_users:
             board.members.add(*found_users)
@@ -147,6 +152,10 @@ def remove_member_from_board(request):
 
         board = Board.objects.get(board_id=board_id, created_by=request.user)
         user = User.objects.get(email=user_email)
+
+        if not request.user.is_superuser and not board.created_by == request.user:
+            return Response({"status": "error", "message": "only superusers or board admins can remove members from boards"},
+                            status=status.HTTP_403_FORBIDDEN)
 
         board.members.remove(user)
 
@@ -197,6 +206,8 @@ def get_my_board(request):
 
     try:        
         board_id = request.data.get('board_id')
+        if not board_id:
+            return Response({"status": "error", "message": "Please provide board_id"}, status=status.HTTP_400_BAD_REQUEST)
 
         today = timezone.now().date()
         tomorrow = today + timedelta(days=1)
@@ -326,8 +337,7 @@ def get_my_board(request):
                     {
                         "comment": comment.comment_text,
                         "commented_by": comment.user.full_name if comment.user else "Unknown"
-                    }
-                    for comment in list_comments
+                    } for comment in list_comments
                 ],
                     "Media_files": {
                         "Images": [{"image_url": f'http://{url_path}{img.task_image.url}'} for img in list_images],
@@ -360,6 +370,9 @@ def search_boards(request):
         data = request.data
         queryset = Board.objects.filter(members = request.user).order_by('-is_starred')
 
+        if not request.user in queryset.first().members.all():
+            return Response({"status": "error", "message": "You are not a member of this board"}, status=status.HTTP_403_FORBIDDEN)
+
         if data.get('board_id'):
             queryset = queryset.filter(pk=data['board_id'])
         if data.get('title'):
@@ -386,9 +399,12 @@ def star_board(request):
     board_id = request.data.get('board_id')
     if not board_id:
         return Response({"status":"error", "message":"please enter board_id"}, status=status.HTTP_400_BAD_REQUEST)
-    
+     
     try:
         board = Board.objects.get(board_id=board_id, members=request.user)
+        if not request.user in board.members.all():
+            return Response({"status": "error", "message": "You are not a member of this board"}, status=status.HTTP_403_FORBIDDEN)
+        
         board.is_starred = not board.is_starred
         board.save()
 
@@ -416,6 +432,9 @@ def print_export_share(request):
 
     try:
         tasks = TaskCard.objects.get(task_id=task_id, created_by=user)
+
+        if not user in tasks.board.members.all():
+            return Response({"status": "error", "message": "You are not a member of this board"}, status=status.HTTP_403_FORBIDDEN)
 
         ##### JSON #####
         if export_format == "json":
@@ -518,12 +537,14 @@ def share_invite(request):
     try:
         board_id = request.data.get("board_id")
         email = request.data.get("email")
+        board = Board.objects.get(board_id=board_id)
+        user = User.objects.get(email=email)
 
         if not board_id or not email:
             return Response({"status":"error", "message":"please provide board_id and email"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        board = Board.objects.get(board_id=board_id)
-        user = User.objects.get(email=email)
+
+        if not request.user in board.members.all():
+            return Response({"status": "error", "message": "You are not a member of this board"}, status=status.HTTP_403_FORBIDDEN)
 
         link = f"http://trellotaskmanagement.com/invite?board_id={board.board_id}&email={user.email}"
         send_mail(
@@ -544,3 +565,37 @@ def share_invite(request):
 
     except Exception as e:
         return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# notification for remind tasks due and upcoming deadlines
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def notifications(request):
+    user = request.user
+    print("===========", user)
+    today = timezone.now().date()
+    upcoming = today + timedelta(days=2)
+
+    upcoming_tasks = TaskList.objects.filter(
+        Q(assigned_to=user) | Q(task_card__board__members=user), due_date=upcoming, is_completed=False).distinct().order_by('due_date')
+
+    # Send reminder emails
+    for task in upcoming_tasks:
+        print("===========",task.tasklist_id)
+        print("===========",task.tasklist_title)
+        print("=======>>>>>",upcoming_tasks)
+        if task.assigned_to and task.assigned_to.email:
+            subject = f"Reminder: Task '{task.tasklist_title}' is due soon"
+            message = (
+                f"Hello {task.assigned_to.username},\n\n"
+                f"Your task '{task.tasklist_title}' is due on {task.due_date}.\n"
+                f"Please complete it before the deadline."
+            )
+
+    send_mail(subject, message, None, [task.assigned_to.email], fail_silently=False)
+    
+    # Log activity
+    activity(request.user, f"{request.user.username} viewed notifications")
+
+    serializer = TaskListSerializer(upcoming_tasks, many=True)
+    return Response({"status": "success", "message":"Notification Sent Successfully","data": serializer.data}, status=status.HTTP_200_OK)
