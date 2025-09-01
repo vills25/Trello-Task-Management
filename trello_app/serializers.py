@@ -42,14 +42,33 @@ class TaskListSerializer(serializers.ModelSerializer):
     assigned_to = UserDetailSerializer()
     created_by = serializers.CharField(source='created_by.username', read_only=True)
     updated_by = serializers.CharField()
-    comments = CommentDetailSerializer(many=True, read_only=True)
+    # comments = CommentDetailSerializer(many=True, read_only=True)
     image = TaskImageSerializer(many=True, read_only=True)
     attachment = TaskAttachmentSerializer(many=True, read_only=True)
-
+    comments = serializers.SerializerMethodField()
+    media_files = serializers.SerializerMethodField()
+    checklist_progress = serializers.SerializerMethodField()
+    
     class Meta:
         model = TaskList
         fields = ['tasklist_id', 'task_card', 'tasklist_title', 'tasklist_description','priority','label_color','start_date','due_date',
-                  'created_at','created_by', 'updated_at','is_completed', 'updated_by','image','attachment','comments','assigned_to']
+                  'created_at','created_by', 'updated_at','is_completed', 'updated_by','assigned_to','image','attachment','comments','checklist_progress','checklist_items']
+
+    def get_checklist_progress(self, obj):
+        checklist_items = obj.checklist_items or []
+        total_items = len(checklist_items)
+        completed_items = sum(1 for item in checklist_items if item.get("is_checked", False))
+        return (completed_items / total_items * 100) if total_items > 0 else 0
+
+    def get_comments(self, obj):
+        comments = obj.comments.all()
+        return [
+            {
+                "comment": comment.comment_text,
+                "commented_by": comment.user.full_name if comment.user else "Unknown"
+            }
+            for comment in comments
+        ]
 
 class CommentSerializer(serializers.ModelSerializer):
     user = UserDetailSerializer()

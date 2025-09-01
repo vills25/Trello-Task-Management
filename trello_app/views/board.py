@@ -34,6 +34,7 @@ def create_board(request):
                 visibility=data.get("visibility", "private"),
                 created_by=request.user
             )
+            # add board creator as a member
             board.members.add(request.user)
             
             if members_emails:
@@ -318,13 +319,11 @@ def get_my_board(request):
 
         for task in tasks:
             tasks_lists = TaskList.objects.filter(task_card=task)
-            comments = Comment.objects.filter(user= request.user)
             
             task_list_data = []
             for tlist in tasks_lists:
                 list_images = TaskImage.objects.filter(tasks_lists_id=tlist)
                 list_attachments = TaskAttachment.objects.filter(tasks_lists_id=tlist)
-                list_comments = Comment.objects.filter(task_list=tlist)
 
                 task_list_data.append({
                     "tasklist_id": tlist.tasklist_id,
@@ -333,16 +332,15 @@ def get_my_board(request):
                     "priority": tlist.priority,
                     "label_color": tlist.label_color,
                     "due_date": tlist.due_date.strftime("%d-%m-%Y") if tlist.due_date else None,
-                    "comments": [
-                    {
-                        "comment": comment.comment_text,
-                        "commented_by": comment.user.full_name if comment.user else "Unknown"
-                    } for comment in list_comments
-                ],
+                    "is_completed": tlist.is_completed,
+                    "assigned_to": tlist.assigned_to.full_name if tlist.assigned_to else "Unassigned",
                     "Media_files": {
                         "Images": [{"image_url": f'http://{url_path}{img.task_image.url}'} for img in list_images],
                         "Attachments": [{"attachment_url": f'http://{url_path}{att.task_attachment.url}'} for att in list_attachments]
-                    }
+                    },
+                    "comments": TaskListSerializer().get_comments(tlist),
+                    "checklist_progress": TaskListSerializer().get_checklist_progress(tlist),
+                    "checklist_items": tlist.checklist_items,
                 })
             
             board_data["Tasks Cards"].append({
@@ -572,7 +570,6 @@ def share_invite(request):
 @permission_classes([IsAuthenticated])
 def notifications(request):
     user = request.user
-    print("===========", user)
     today = timezone.now().date()
     upcoming = today + timedelta(days=2)
 
@@ -581,9 +578,6 @@ def notifications(request):
 
     # Send reminder emails
     for task in upcoming_tasks:
-        print("===========",task.tasklist_id)
-        print("===========",task.tasklist_title)
-        print("=======>>>>>",upcoming_tasks)
         if task.assigned_to and task.assigned_to.email:
             subject = f"Reminder: Task '{task.tasklist_title}' is due soon"
             message = (

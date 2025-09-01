@@ -557,3 +557,29 @@ def move_task_list(request):
 
     except Exception as e:
         return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+# checklist box 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def task_list_checklist_progress(request):
+    try:
+        task_list_id = request.data.get("task_list_id")
+        get_checklist_items = request.data.get("checklist_items", [])
+
+        if not task_list_id:
+            return Response({"status": "error", "message": "Task list ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        task_list = TaskList.objects.get(tasklist_id=task_list_id, created_by=request.user)
+        task_list.checklist_items = get_checklist_items
+        task_list.save()
+
+        activity(request.user, f"{request.user.full_name} updated task list progress: {task_list.tasklist_title}")
+
+        serializers = TaskListSerializer(task_list)
+        return Response({"status": "successfull", "message": "Task list progress updated", "Task List Data": serializers.data}, status=status.HTTP_200_OK)
+
+    except TaskList.DoesNotExist:
+        return Response({"status": "error", "message": "Task list not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    except Exception as e:
+        return Response({"status": "error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
