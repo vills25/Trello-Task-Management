@@ -583,3 +583,31 @@ def tasklist_checklist_progress(request):
 
     except Exception as e:
         return Response({"status": "error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+# delete checklist
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_checklist(request):
+    task_list_id = request.data.get("task_list_id")
+    checklist_item_id = request.data.get("checklist_item_id")
+
+    if not task_list_id or not checklist_item_id:
+        return Response({"status": "error", "message": "Task list ID and checklist item ID are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    if not TaskList.objects.filter(tasklist_id=task_list_id, checklist_items__id=checklist_item_id).exists():
+        return Response({"status": "error", "message": "Checklist item not found in the specified task list"}, status=status.HTTP_404_NOT_FOUND)
+
+    try:
+        task_list = TaskList.objects.get(tasklist_id=task_list_id, created_by=request.user)
+        checklist_item = task_list.checklist_items.get(id=checklist_item_id)
+
+        checklist_item.delete()
+        activity(request.user, f"{request.user.full_name} deleted a checklist item from task list: {task_list.tasklist_title}")
+
+        return Response({"status": "successfull", "message": "Checklist item deleted"}, status=status.HTTP_200_OK)
+
+    except TaskList.DoesNotExist:
+        return Response({"status": "error", "message": "Task list not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    except Exception as e:
+        return Response({"status": "error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
