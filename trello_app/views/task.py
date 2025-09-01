@@ -561,7 +561,7 @@ def move_task_list(request):
 # checklist box 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def task_list_checklist_progress(request):
+def tasklist_checklist_progress(request):
     try:
         task_list_id = request.data.get("task_list_id")
         get_checklist_items = request.data.get("checklist_items", [])
