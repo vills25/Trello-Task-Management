@@ -57,40 +57,24 @@ class TaskListSerializer(serializers.ModelSerializer):
         print("-------obj------", obj)
 
         checklist_data = obj.checklist_items or {}
-
-        print("-------checklist_data------", checklist_data)
         checklist_items = checklist_data.get("items", [])
-
-        print("-------a------", checklist_items)
-
         total_items = len(checklist_items)
-        print("--------b-----", total_items)
 
         completed_items = 0
-        for item in checklist_items:
-            print("-------c------", item)
-            if item.get("done", False):
-                
-                print("a")
-            else:
-                completed_items = 1
-                print("b")
+        # for item in checklist_items:
+        #     if item.get("done", False):  
+        #         print("a")
+        #     else:
+        #         completed_items = 1
+        #         print("b")
 
-
-
-        print("-----------------------/get_checklist_progress/",completed_items)
         return (completed_items / total_items * 100) if total_items > 0 else 0
-
 
     def get_comments(self, obj):
         comments = obj.comments.all()
         return [
-            {
-                "comment": comment.comment_text,
-                "commented_by": comment.user.full_name if comment.user else "Unknown"
-            }
-            for comment in comments
-        ]
+            {"comment": comment.comment_text, "commented_by": comment.user.full_name if comment.user else "Unknown"} for comment in comments
+            ]
 
 class CommentSerializer(serializers.ModelSerializer):
     user = UserDetailSerializer()

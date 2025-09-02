@@ -50,7 +50,6 @@ def search_tasks_by(request):
         activity(request.user, f"{request.user.full_name} Searched Tasks")
         serializer = TaskCardSerializer(queryset, many=True)
 
-        print("-------d------", serializer.data)
         return Response({"status":"success", "Task card": serializer.data}, status=status.HTTP_200_OK)
 
     except TaskCard.DoesNotExist:
@@ -567,38 +566,30 @@ def tasklist_checklist_progress(request):
     try:
         task_list_id = request.data.get("task_list_id")
         get_checklist_items = request.data.get("checklist_items", {})
-        print("===========checklist_items>>>>>>>>>>>>>>>11", get_checklist_items)
+
         if not task_list_id:
             return Response({"status": "error", "message": "task_list_id is required"}, status=status.HTTP_400_BAD_REQUEST)
 
         task_list = TaskList.objects.get(tasklist_id=task_list_id, created_by=request.user)
-        print("===========task_list>>>>>>>>>>>>>>>>222", task_list.tasklist_id)
-
-        # old_items = task_list.checklist_items or []
-        # new_items = get_checklist_items or []
-        # merged = {item["name"]: item for item in old_items + new_items}
-
-        # result = []
-        # for key in merged:
-        #     result.append(merged[key])
-        # task_list.checklist_items = result
-        # task_list.save()
-
-        # Old checklist from DB
-        old_checklist = task_list.checklist_items or {"title": "", "items": []}
-        print("===========old_checklist>>>>>>>>>>>>>>>333", old_checklist)
-
+        # Merging old and new checklist items
+        old_checklist = task_list.checklist_items or {"title": "", "items": []}  # Ensure old checklist is initialized
         title = get_checklist_items.get("title", old_checklist.get("title", ""))
 
+        # If title is not provided in both old and new, set a default title
+        if not title:
+            title = "Checklist"
+
+        # Merging items based on name to avoid duplicates
         old_items = old_checklist.get("items", [])
         new_items = get_checklist_items.get("items", [])
 
+        # Using a dictionary to merge old and new items by name
         merged = {item["name"]: item for item in old_items + new_items}
 
+        # Preserving the order of items based on their first occurrence
         result = {"title": title,"items": [merged[key] for key in merged]}
-        print("===========result>>>>>>>>>>>>>>>44", result)
+
         task_list.checklist_items = result
-        print("===========task_list  items>>>>>>>>>>>>>>>55", task_list.checklist_items)
         task_list.save()
 
         activity(request.user, f"{request.user.full_name} updated task list progress: {task_list.tasklist_title}")
@@ -612,52 +603,6 @@ def tasklist_checklist_progress(request):
 
     except Exception as e:
         return Response({"status": "error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-# import json
-
-# @api_view(['POST'])
-# @permission_classes([IsAuthenticated])
-# def tasklist_checklist_progress(request):
-#     try:
-#         task_list_id = request.data.get("task_list_id")
-#         get_checklist_items = request.data.get("checklist_items", {})
-
-#         # Agar string hai to dict me convert kar do
-#         if isinstance(get_checklist_items, str):
-#             try:
-#                 get_checklist_items = json.loads(get_checklist_items)
-#             except json.JSONDecodeError:
-#                 return Response({"status": "error", "message": "Invalid checklist_items format"},status=status.HTTP_400_BAD_REQUEST)
-
-#         if not task_list_id:
-#             return Response({"status": "error", "message": "task_list_id is required"}, status=status.HTTP_400_BAD_REQUEST)
-
-#         task_list = TaskList.objects.get(tasklist_id=task_list_id, created_by=request.user)
-
-#         # Old checklist from DB
-#         old_checklist = task_list.checklist_items or {"title": "", "items": []}
-#         title = get_checklist_items.get("title", old_checklist.get("title", ""))
-
-#         old_items = old_checklist.get("items", [])
-#         new_items = get_checklist_items.get("items", [])
-
-#         merged = {item["name"]: item for item in old_items + new_items}
-#         result = {"title": title, "items": list(merged.values())}
-
-#         task_list.checklist_items = result
-#         task_list.save()
-
-#         activity(request.user, f"{request.user.full_name} updated task list progress: {task_list.tasklist_title}")
-
-#         serializers = TaskListSerializer(task_list)
-#         return Response({"status": "successfull", "message": "Task list progress updated", "Data": serializers.data},status=status.HTTP_200_OK)
-
-#     except TaskList.DoesNotExist:
-#         return Response({"status": "error", "message": "Task list not found"}, status=status.HTTP_404_NOT_FOUND)
-
-#     except Exception as e:
-#         return Response({"status": "error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
 
 #update check Box
 @api_view(['PUT'])
@@ -699,33 +644,38 @@ def edit_checkbox(request):
 @permission_classes([IsAuthenticated])
 def delete_checklist(request):
     get_tasklist_id = request.data.get("tasklist_id")
+    get_item_name = request.data.get("name")
 
     try:
         task_list = TaskList.objects.get(tasklist_id=get_tasklist_id, created_by=request.user)
-        item_name = request.data.get("name")
-
+        
+        # get current checklist items
         current_checklist = task_list.checklist_items if task_list.checklist_items else []
 
-        if item_name:
+        # Check if item_name is provided
+        if get_item_name:
             new_checklist = []
             item_found = False
-            
+
+            # Iterate through current checklist items and exclude the item to be deleted
             for item in current_checklist:
-                if item.get("name") == item_name:
+                if item.get("name") == get_item_name: # check if item name is matches 
                     item_found = True
                 else:
                     new_checklist.append(item)
-            
+
+            # If item_found is True, it means the item was deleted
             if item_found:
                 task_list.checklist_items = new_checklist
-                msg = f"checklist item '{item_name}' deleted successfully"
-                activity(request.user, f"{request.user.full_name} deleted checklist item '{item_name}' from {task_list.tasklist_title}")
+                msg = f"checklist item '{get_item_name}' deleted successfully"
+                activity(request.user, f"{request.user.full_name} deleted checklist item '{get_item_name}' from {task_list.tasklist_title}")
             else:
-                msg = f"item '{item_name}' not found in checklist"
+                msg = f"item '{get_item_name}' not found in checklist"
                 return Response({"status": "error", "message": msg}, status=status.HTTP_404_NOT_FOUND)
         else:
+            # If no item_name is provided, clear the entire checklist
             task_list.checklist_items = []
-            msg = " checklist items delete"
+            msg = " checklist items deleted"
             activity(request.user, f"{request.user.full_name} cleared checklist:{task_list.tasklist_title}")
 
         task_list.save()
@@ -736,3 +686,41 @@ def delete_checklist(request):
 
     except Exception as e:
         return Response({"status": "error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+# features for convert checkbox into tasklist 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def convert_checkbox_to_tasklist(request):
+    get_tasklist_id = request.data.get("tasklist_id")
+    get_item_name = request.data.get("name")
+
+    if not get_tasklist_id or not get_item_name:
+        return Response({"status": "error", "message": "tasklist_id and item name are required"},status=status.HTTP_400_BAD_REQUEST,)
+
+    try:
+
+        task_list = TaskList.objects.get(tasklist_id=get_tasklist_id, created_by=request.user)
+
+        checklist = task_list.checklist_items or {}
+        checklist_items = checklist.get("items", [])
+
+        for item in checklist_items:
+            if item.get("name") == get_item_name:
+                new_task = TaskList.objects.create(
+                    tasklist_title=item.get("name"),
+                    tasklist_description=item.get("description", ""),
+                    task_card=task_list.task_card,
+                    created_by=request.user)
+
+                activity(request.user,f"{request.user.full_name} converted checklist item: {get_item_name} to task {new_task.tasklist_title}")
+
+                return Response({"status": "success","message": f"Checklist item '{get_item_name}' converted to task '{new_task.tasklist_title}'"},
+                                  status=status.HTTP_200_OK)
+
+        return Response({"status": "error", "message": f"Checklist item '{get_item_name}' not found"}, status=status.HTTP_404_NOT_FOUND,)
+
+    except TaskList.DoesNotExist:
+        return Response({"status": "error", "message": "Task list not found"},status=status.HTTP_404_NOT_FOUND,)
+
+    except Exception as e:
+        return Response({"status": "error", "message": str(e)},status=status.HTTP_400_BAD_REQUEST,)
