@@ -52,4 +52,6 @@ urlpatterns = [
     path('move_task_list/', move_task_list),
     path('sort_task_lists/', sort_task_lists),
     path('tasklist_checklist_progress/', tasklist_checklist_progress),
+    path('edit_checkbox/', edit_checkbox),
+    path('delete_checklist/', delete_checklist),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

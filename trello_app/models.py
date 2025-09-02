@@ -80,7 +80,7 @@ class TaskList(models.Model):
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="list_created_by")
     updated_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name="list_updated_by")
     assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_tasks')
-    checklist_items = models.JSONField(default=list, blank=True)
+    checklist_items = models.JSONField(default= dict, blank=True)
 
     def __str__(self):
         return self.tasklist_title
