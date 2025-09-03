@@ -30,7 +30,7 @@ urlpatterns = [
     path('get_my_board/', get_my_board),
     path('search_boards/', search_boards),
     path('star_board/', star_board),
-    path('print_export_share/', print_export_share),
+    path('print_export/', print_export),
     path('share_invite/', share_invite),
     path('notifications/', notifications),
 

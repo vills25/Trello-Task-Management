@@ -242,6 +242,7 @@ def get_my_board(request):
 
         members = board.members.all()
         
+        # board_data >> Tasks Cards
         board_data = {
             "board_id": board.board_id,
             "title": board.title,
@@ -254,11 +255,10 @@ def get_my_board(request):
             "members": [{"user_id": m.user_id, "full_name": m.full_name} for m in members],
             "Tasks Cards": []
         }
-
+        
         tasks = TaskCard.objects.filter(board=board).select_related('created_by', 'updated_by').order_by('-is_starred')
 
         # TaskCard filters
-
         if 'completed' in request.data:
             if request.data['completed']:
                 tasks = tasks.filter(is_completed='completed')
@@ -314,9 +314,10 @@ def get_my_board(request):
         if request.data.get('due_on_this_week'):
             tasks = tasks.filter(task_lists__due_date__range=[this_week, next_week])
 
-        tasks = tasks.distinct()
         url_path = request.META.get('HTTP_HOST', '')
+        tasks = tasks.distinct()
 
+        # Get all task from tasks through loop and add into "task_list_data = []"
         for task in tasks:
             tasks_lists = TaskList.objects.filter(task_card=task)
             
@@ -343,6 +344,7 @@ def get_my_board(request):
                     "checklist_items": tlist.checklist_items,
                 })
             
+            # Append "Tasks Cards" in to Board
             board_data["Tasks Cards"].append({
                 "Task_id": task.task_id,
                 "Title": task.title,
@@ -351,7 +353,7 @@ def get_my_board(request):
                 "Created_at": task.created_at.strftime("%d-%m-%Y %H:%M:%S"),
                 "Updated_by": task.updated_by.full_name if task.updated_by else "None",
                 "Updated_at": task.updated_at.strftime("%d-%m-%Y %H:%M:%S"),
-                "Task Lists": task_list_data,
+                "Task Lists": task_list_data, # Add "Tasks Lists" in to Card
             })
         activity(request.user, f"{request.user.full_name} performed action on board, board title: {board.title}")
         return Response({"status":"success", "Board data": board_data}, status=status.HTTP_200_OK)
@@ -417,10 +419,10 @@ def star_board(request):
         return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
 
-# Print, Export as PDF, Json, CSV, and share functionality
+# Print, Export as PDF, Json, CSV functionality
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def print_export_share(request):
+def print_export(request):
     user = request.user
     task_id = request.data.get("task_id")
     export_format = request.data.get("format").lower()
@@ -434,7 +436,7 @@ def print_export_share(request):
         if not user in tasks.board.members.all():
             return Response({"status": "error", "message": "You are not a member of this board"}, status=status.HTTP_403_FORBIDDEN)
 
-        ##### JSON #####
+    ##### JSON #####
         if export_format == "json":
             serializer = TaskCardSerializer(tasks)
             file_name = f"boards_task{task_id}.json"
@@ -445,7 +447,7 @@ def print_export_share(request):
                 json.dump(serializer.data, json_file)
             return Response({"status": "success", "message": f"json file location {file_path}"}, status=status.HTTP_200_OK,)
 
-        ##### CSV #####
+    ##### CSV #####
         if export_format == "csv":
             file_name = f"boards_task{task_id}.csv"
             file_path = os.path.join(settings.MEDIA_ROOT, "exports", file_name)
@@ -459,7 +461,7 @@ def print_export_share(request):
 
             return Response({"status": "success", "message": f"CSV file location {file_path}"}, status=status.HTTP_200_OK)
 
-        ##### PDF #####
+    ##### PDF #####
         elif export_format == "pdf":
             file_name = f"task_{task_id}.pdf"
             file_path = os.path.join(settings.MEDIA_ROOT, "exports", file_name)
@@ -492,7 +494,7 @@ def print_export_share(request):
 
             return Response({"status": "success", "message": f"PDF file location {file_path}"}, status=status.HTTP_200_OK,)
 
-        ##### EXCEL #####
+    ##### EXCEL #####
         elif export_format == "excel":
 
             file_name = f"boards_task{task_id}.xlsx"
@@ -587,8 +589,7 @@ def notifications(request):
             )
 
     send_mail(subject, message, None, [task.assigned_to.email], fail_silently=False)
-    
-    # Log activity
+
     activity(request.user, f"{request.user.username} viewed notifications")
 
     serializer = TaskListSerializer(upcoming_tasks, many=True)

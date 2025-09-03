@@ -34,7 +34,7 @@ def register_user(request):
             )
             activity(user, f"username: {user.username} registered, fullname: {user.full_name}")
 
-            serializer = UserDetailSerializer(user)
+            serializer = UserDetailSerializer(user, context={'request': request})
             return Response({"status": "success",
                             "message": "User registered successfully.",
                             "data": serializer.data}, status=status.HTTP_201_CREATED)
@@ -167,11 +167,11 @@ def update_profile(request):
                 user_get.full_name = data['full_name']
 
             if 'profile_image' in data:
-                    user_get.profile_image = request.FILES.get('profile_pic', user_get.profile_image)    
+                user_get.profile_image = request.FILES.get('profile_image', user_get.profile_image)
 
             user_get.save()
             activity(request.user, f"{request.user.username} updated his profile: {user_get.username}")
-            serializer = UserSerializer(user_get, many=True)
+            serializer = UserSerializer(user_get, context={'request': request})
             return Response({"status":"success", "message": "Buyer updated successfully","Updated User Data": serializer.data}, status=status.HTTP_200_OK)
 
     except User.DoesNotExist:
@@ -224,7 +224,7 @@ def search_view_all_users(request):
         if not users.exists():
             return Response({"status":"error", "message": "No users found matching the results"}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = UserSerializer(users, many=True)
+        serializer = UserSerializer(users, many=True, context={'request': request})
         activity(request.user, f"{request.user.username} viewed all users")
         return Response({"status":"success", "Users Data": serializer.data}, status=status.HTTP_200_OK)
     except Exception as e:
@@ -238,7 +238,7 @@ def view_my_profile(request):
     try:
         if not user:
             return Response({"status":"error", "message":"User Not Found or Not Exist!"}, status= status.HTTP_404_NOT_FOUND)
-        serializer = UserSerializer(user)
+        serializer = UserSerializer(user, context={'request': request})
         activity(request.user, f"{request.user.username} viewed his profile")
         return Response({"status":"success", "Users Data": serializer.data}, status=status.HTTP_200_OK)
     except Exception as e:

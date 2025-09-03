@@ -5,6 +5,15 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['user_id', 'username', 'email', 'password', 'full_name', 'profile_image','created_at','updated_at']
+        extra_kwargs = {'password': {'write_only': True}} # not show password in user detail.
+
+    # get generate full image path, ex."profile_image": "http://127.0.0.1:8000/media/profiles/20241206_piesUt9.jpg"
+    def get_profile_image(self, obj):
+        request = self.context.get('request')
+        if obj.profile_image and request:
+            host = request.get_host()
+            return f"http://{host}{obj.profile_image.url}"
+        return None
 
 class UserDetailSerializer(serializers.ModelSerializer):
     class Meta:
@@ -26,6 +35,7 @@ class CommentDetailSerializer(serializers.ModelSerializer):
 class TaskImageSerializer(serializers.ModelSerializer):
     uploaded_by = serializers.CharField(source='created_by.username', read_only=True)
     updated_by = serializers.CharField(source='updated_by.username', read_only=True)
+
     class Meta:
         model = TaskImage
         fields = ['task_image_id', 'tasks_lists_id', 'task_image', 'uploaded_at', 'uploaded_by', 'updated_at', 'updated_by']
@@ -52,29 +62,24 @@ class TaskListSerializer(serializers.ModelSerializer):
         fields = ['tasklist_id', 'task_card', 'tasklist_title', 'tasklist_description','priority','label_color','start_date','due_date',
                   'created_at','created_by', 'updated_at','is_completed', 'updated_by','assigned_to','image','attachment','comments','checklist_progress','checklist_items']
 
+    def get_comments(self, obj):
+        comments = obj.comments.all()
+        return [{"comment": comment.comment_text, "commented_by": comment.user.full_name if comment.user else "Unknown"} 
+                  for comment in comments]
+
     def get_checklist_progress(self, obj):
-
         print("-------obj------", obj)
-
         checklist_data = obj.checklist_items or {}
         checklist_items = checklist_data.get("items", [])
         total_items = len(checklist_items)
-
         completed_items = 0
-        # for item in checklist_items:
-        #     if item.get("done", False):  
-        #         print("a")
-        #     else:
-        #         completed_items = 1
-        #         print("b")
-
         return (completed_items / total_items * 100) if total_items > 0 else 0
 
-    def get_comments(self, obj):
-        comments = obj.comments.all()
-        return [
-            {"comment": comment.comment_text, "commented_by": comment.user.full_name if comment.user else "Unknown"} for comment in comments
-            ]
+    def get_image(self, obj):
+        request = self.context.get('request')
+        if obj.image and request:
+            host = request.get_host()
+            return f"http://{host}{obj.image.url}"
 
 class CommentSerializer(serializers.ModelSerializer):
     user = UserDetailSerializer()

@@ -436,7 +436,7 @@ def update_tasks_lists(request):
         task_list.save()
         activity(request.user, f"{request.user.full_name} updated task list: {task_list.tasklist_title} in task: {task_list.task_card.title}")
 
-        serializers = TaskListSerializer(task_list)
+        serializers = TaskListSerializer(task_list, context={'request': request})
         return Response({"status":"success", "message": "Task list updated", "Task List Data": serializers.data}, status=status.HTTP_200_OK)
 
     except Exception as e:
