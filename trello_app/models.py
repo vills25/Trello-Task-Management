@@ -1,27 +1,24 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
+## Model for User Detail (AbstractUser ka use authentication system (login, password hashing, permissions) automatic mil jaye isiliye kiya hei)
 class User(AbstractUser):
     user_id = models.AutoField(primary_key=True)
     username = models.CharField(unique=True, max_length=150)
     email = models.EmailField(max_length=254,unique=True)
-    full_name = models.CharField(max_length=100, blank=True)
-    profile_image = models.ImageField(upload_to='profiles/', blank=True, null=True)
+    full_name = models.CharField(max_length=100, blank=True) ## Extra field added
+    profile_image = models.ImageField(upload_to='profiles/', blank=True, null=True) ## Extra field added
     is_admin = models.BooleanField(default=False)
     is_superadmin = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    REQUIRED_FIELDS = ['email', 'full_name']
+    REQUIRED_FIELDS = ['email', 'full_name'] 
 
     def __str__(self):
         return self.username
-    
-    @property
-    def id(self):
-        return self.user_id
 
-
+## Model for Store OTP and verify (Foreignkey used -->> User)
 class ForgotPasswordOTP(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     otp = models.CharField(max_length=6)
@@ -31,7 +28,7 @@ class ForgotPasswordOTP(models.Model):
     def __str__(self):
         return f"{self.user.email} - {self.otp}"
 
-
+## Model for manage Board(WorkSpace)  (Foreignkey used -->> User)
 class Board(models.Model):
     board_id = models.AutoField(primary_key=True)
     title = models.CharField(max_length=100)
@@ -47,7 +44,7 @@ class Board(models.Model):
     def __str__(self):
         return self.title
 
-
+## Model for manage TaskCard  (Foreignkey used -->> Board, User)
 class TaskCard(models.Model):
     task_id = models.AutoField(primary_key=True)    
     board = models.ForeignKey(Board, on_delete=models.CASCADE, related_name="task_cards")
@@ -63,6 +60,7 @@ class TaskCard(models.Model):
     def __str__(self):
         return self.title
 
+## Model for manage TaskLists (Foreignkey -->> TaskCard, User)
 class TaskList(models.Model):
     PRIORITY_CHOICES = [("low", "Low"), ("medium", "Medium"), ("high", "High")]
     COLOR_CHOICES = [("green", "Green"), ("yellow", "Yellow"), ("orange", "Orange"), ("red", "Red")]
@@ -85,6 +83,7 @@ class TaskList(models.Model):
     def __str__(self):
         return self.tasklist_title
 
+## Model for manage Images  (Foreignkey used -->> TaskList, User)
 class TaskImage(models.Model):
     task_image_id = models.AutoField(primary_key=True)
     tasks_lists_id = models.ForeignKey(TaskList, on_delete=models.CASCADE, related_name="image")
@@ -94,6 +93,7 @@ class TaskImage(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name='image_updated_by')
 
+## Model for manage Attachments files  (Foreignkey used -->> TaskList, User)
 class TaskAttachment(models.Model):
     task_attachment_id = models.AutoField(primary_key=True)
     tasks_lists_id = models.ForeignKey(TaskList, on_delete=models.CASCADE, related_name="attachment")
@@ -104,7 +104,7 @@ class TaskAttachment(models.Model):
     updated_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name='attachment_updated_by')
 
 
-# Class for activity log
+## Model for activity log (Foreignkey used -->> User)
 class Activity(models.Model):
     date_time = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(User, on_delete=models.SET_NULL,null=True, blank=True)
@@ -113,7 +113,7 @@ class Activity(models.Model):
     def __str__(self):
         return f'{self.user}----{self.date_time}----{self.Details}'
 
-# Class for Comment
+## Model for store Comments  (Foreignkey used -->> TaskList, User)
 class Comment(models.Model):
     comment_id = models.AutoField(primary_key=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)

@@ -6,6 +6,7 @@ from django.db import transaction
 from trello_app.models import *
 from trello_app.serializers import *
 from .authentication import activity
+import json
 
 # Search Task Cards by..    
 @api_view(['POST'])
@@ -48,7 +49,7 @@ def search_tasks_by(request):
                 return Response({"status":"error", "message": "No matching Tasks found"}, status=status.HTTP_404_NOT_FOUND)
         
         activity(request.user, f"{request.user.full_name} Searched Tasks")
-        serializer = TaskCardSerializer(queryset, many=True)
+        serializer = TaskCardSerializer(queryset, many=True, context={'request': request})
 
         return Response({"status":"success", "Task card": serializer.data}, status=status.HTTP_200_OK)
 
@@ -84,7 +85,7 @@ def sort_task_lists(request):
         else:
             return Response({"status": "fail", "error": "invalid choice"}, status=status.HTTP_400_BAD_REQUEST)
 
-        serializer = TaskListSerializer(queryset, many=True)
+        serializer = TaskListSerializer(queryset, many=True, context={'request': request})
         return Response({"status": "success", "Task lists": serializer.data}, status=status.HTTP_200_OK)
 
     except Exception as e:
@@ -314,7 +315,7 @@ def copy_task_card(request):
                 )
             
         activity(request.user, f"{request.user.full_name} copied task card: {get_task_card.title}")
-        serializer = TaskCardSerializer(copy_task_card)
+        serializer = TaskCardSerializer(copy_task_card, context={'request': request})
 
         return Response({"status": "successfull", "message": "Task Card copied", "Task Card Data": serializer.data},
                         status=status.HTTP_201_CREATED)
@@ -373,7 +374,7 @@ def create_task_lists(request):
                 TaskAttachment.objects.create(tasks_lists_id=task_list, task_attachment=file)
 
             activity(request.user, f"{request.user.full_name} created task list: {task_list.tasklist_title} in task: {task.title}")
-            serializers = TaskListSerializer(task_list)
+            serializers = TaskListSerializer(task_list, context={'request': request})
             return Response({"atatus":"success", "message": "Task list created", "Task List Data": serializers.data}, status=status.HTTP_201_CREATED)
 
     except Exception as e:
@@ -609,29 +610,39 @@ def tasklist_checklist_progress(request):
 @permission_classes([IsAuthenticated])
 def edit_checkbox(request):
     get_tasklist_id = request.data.get("tasklist_id")
-    item_name = request.data.get("name")
-    is_checked = request.data.get("is_checked", False)
+    get_item_name = request.data.get("name")
+    get_is_checked = request.data.get("is_checked", False)
 
-    if not get_tasklist_id or not item_name:
-        return Response({"status": "error", "message": "tasklist_id and item name are required"}, status=status.HTTP_400_BAD_REQUEST)
+    if not get_tasklist_id or not get_item_name:
+        return Response({"status": "error", "message": "tasklist_id and item name are required"},status=status.HTTP_400_BAD_REQUEST)
 
     try:
         task_list = TaskList.objects.get(tasklist_id=get_tasklist_id, created_by=request.user)
-        checklist = task_list.checklist_items or []
 
-        for item in checklist:
-            if item.get("name") == item_name:
-                item["is_checked"] = is_checked
+        checklist = task_list.checklist_items or {}
+
+        if isinstance(checklist, str):
+            checklist = json.loads(checklist)
+
+        items = checklist.get("items", [])
+
+        updated = False
+        for item in items:
+            if item.get("name") == get_item_name:
+                item["done"] = True if str(get_is_checked).lower() == "true" else False
+                updated = True
                 break
-        else:
-            return Response({"status": "error", "message": f"checklist item '{item_name}' not found"}, status=status.HTTP_404_NOT_FOUND)
 
+        if not updated:
+            return Response({"status": "error", "message": f"checklist item '{get_item_name}' not found"},status=status.HTTP_404_NOT_FOUND)
+
+        checklist["items"] = items
         task_list.checklist_items = checklist
         task_list.save()
 
-        activity(request.user, f"{request.user.full_name} updated checklist item '{item_name}' in {task_list.tasklist_title}")
+        activity(request.user, f"{request.user.full_name} updated checklist item '{get_item_name}' in {task_list.tasklist_title}")
 
-        return Response({"status": "success", "message": f"checklist item '{item_name}' updated successfully"}, status=status.HTTP_200_OK)
+        return Response({"status": "success", "message": f"checklist item '{get_item_name}' updated successfully"}, status=status.HTTP_200_OK)
 
     except TaskList.DoesNotExist:
         return Response({"status": "error", "message": "Task list not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -648,35 +659,31 @@ def delete_checklist(request):
 
     try:
         task_list = TaskList.objects.get(tasklist_id=get_tasklist_id, created_by=request.user)
-        
-        # get current checklist items
-        current_checklist = task_list.checklist_items if task_list.checklist_items else []
 
-        # Check if item_name is provided
+        checklist = task_list.checklist_items or {}
+        if isinstance(checklist, str):
+            import json
+            checklist = json.loads(checklist)
+
+        items = checklist.get("items", [])
+
+        # Check if specific item or CheckBox provided and delete them.
         if get_item_name:
-            new_checklist = []
-            item_found = False
+            new_items = [item for item in items if item.get("name") != get_item_name]
 
-            # Iterate through current checklist items and exclude the item to be deleted
-            for item in current_checklist:
-                if item.get("name") == get_item_name: # check if item name is matches 
-                    item_found = True
-                else:
-                    new_checklist.append(item)
+            if len(new_items) == len(items):
+                return Response({"status": "error", "message": f"item '{get_item_name}' not found in checklist"},status=status.HTTP_404_NOT_FOUND)
 
-            # If item_found is True, it means the item was deleted
-            if item_found:
-                task_list.checklist_items = new_checklist
-                msg = f"checklist item '{get_item_name}' deleted successfully"
-                activity(request.user, f"{request.user.full_name} deleted checklist item '{get_item_name}' from {task_list.tasklist_title}")
-            else:
-                msg = f"item '{get_item_name}' not found in checklist"
-                return Response({"status": "error", "message": msg}, status=status.HTTP_404_NOT_FOUND)
+            checklist["items"] = new_items
+            task_list.checklist_items = checklist
+            msg = f"checklist item '{get_item_name}' deleted successfully"
+            activity(request.user, f"{request.user.full_name} deleted checklist item '{get_item_name}' from {task_list.tasklist_title}")
+
+        # If no item provided then delete entire CheckBox
         else:
-            # If no item_name is provided, clear the entire checklist
-            task_list.checklist_items = []
-            msg = " checklist items deleted"
-            activity(request.user, f"{request.user.full_name} cleared checklist:{task_list.tasklist_title}")
+            task_list.checklist_items = {"title": checklist.get("title", ""), "items": []}
+            msg = "All checklist items deleted"
+            activity(request.user, f"{request.user.full_name} cleared all checklist items in {task_list.tasklist_title}")
 
         task_list.save()
         return Response({"status": "success", "message": msg}, status=status.HTTP_200_OK)
@@ -687,7 +694,7 @@ def delete_checklist(request):
     except Exception as e:
         return Response({"status": "error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-# features for convert checkbox into tasklist 
+# features for convert checkbox into tasklist
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def convert_checkbox_to_tasklist(request):

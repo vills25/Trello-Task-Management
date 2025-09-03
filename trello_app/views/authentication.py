@@ -71,6 +71,66 @@ def login_user(request):
     
     return Response({"status":"error","message": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
+# Update Profile
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_profile(request):
+    try:    
+        get_user_id = request.data.get('user_id')
+        if not get_user_id:
+            return Response({"status":"error", "message":"Please enter user_id"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        user_get = User.objects.get(user_id=get_user_id)
+        data = request.data
+        with transaction.atomic():
+            if 'username' in data:
+                    if User.objects.filter(username=data['username']).exclude(pk=user_get.user_id).exists():
+                        return Response({"error": "Username already taken"}, status=status.HTTP_400_BAD_REQUEST)
+                    user_get.username = data['username']
+            
+            if 'email' in data:
+                if User.objects.filter(email=data['email']).exclude(pk=user_get.user_id).exists():
+                    return Response({"error": "Email already registered"}, status=status.HTTP_400_BAD_REQUEST)
+                user_get.email = data['email']
+            
+            if 'password' in data:
+                user_get.set_password(data['password'])
+            
+            if 'full_name' in data:
+                user_get.full_name = data['full_name']
+
+            if 'profile_image' in data:
+                user_get.profile_image = request.FILES.get('profile_image', user_get.profile_image)
+
+            user_get.save()
+            activity(request.user, f"{request.user.username} updated his profile: {user_get.username}")
+            serializer = UserSerializer(user_get, context={'request': request})
+            return Response({"status":"success", "message": "Buyer updated successfully","Updated User Data": serializer.data}, status=status.HTTP_200_OK)
+
+    except User.DoesNotExist:
+        return Response({"status":"error", "message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+# Delete Profile
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_profile(request):
+    user_id = request.data.get('user_id')
+    if not user_id:
+        return Response({"status":"error", "message": "enter User id please"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    if not request.user.is_superuser and request.user.user_id != int(user_id):
+        return Response({"status":"error", "message": "you can not delete others profile"}, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        user = User.objects.get(user_id = user_id)
+        user.delete()
+        activity(request.user, f"{request.user.username} deleted his profile: {user.username}")
+        return Response({"status":"success", "message": "User deleted"}, status=status.HTTP_200_OK)
+    except User.DoesNotExist:
+        return Response({"status":"error", "message": "User not found"}, status= status.HTTP_404_NOT_FOUND)
+
 ###########################################################################
 
 #Generate OTP
@@ -137,66 +197,6 @@ def reset_password(request):
         return Response({"status":"error", "message":"Invalid email"}, status= status.HTTP_404_NOT_FOUND)
 
 #############################################################################
-
-# Update Profile
-@api_view(['PUT'])
-@permission_classes([IsAuthenticated])
-def update_profile(request):
-    try:    
-        get_user_id = request.data.get('user_id')
-        if not get_user_id:
-            return Response({"status":"error", "message":"Please enter user_id"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        user_get = User.objects.get(user_id=get_user_id)
-        data = request.data
-        with transaction.atomic():
-            if 'username' in data:
-                    if User.objects.filter(username=data['username']).exclude(pk=user_get.user_id).exists():
-                        return Response({"error": "Username already taken"}, status=status.HTTP_400_BAD_REQUEST)
-                    user_get.username = data['username']
-            
-            if 'email' in data:
-                if User.objects.filter(email=data['email']).exclude(pk=user_get.user_id).exists():
-                    return Response({"error": "Email already registered"}, status=status.HTTP_400_BAD_REQUEST)
-                user_get.email = data['email']
-            
-            if 'password' in data:
-                user_get.set_password(data['password'])
-            
-            if 'full_name' in data:
-                user_get.full_name = data['full_name']
-
-            if 'profile_image' in data:
-                user_get.profile_image = request.FILES.get('profile_image', user_get.profile_image)
-
-            user_get.save()
-            activity(request.user, f"{request.user.username} updated his profile: {user_get.username}")
-            serializer = UserSerializer(user_get, context={'request': request})
-            return Response({"status":"success", "message": "Buyer updated successfully","Updated User Data": serializer.data}, status=status.HTTP_200_OK)
-
-    except User.DoesNotExist:
-        return Response({"status":"error", "message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-# Delete Profile
-@api_view(['DELETE'])
-@permission_classes([IsAuthenticated])
-def delete_profile(request):
-    user_id = request.data.get('user_id')
-    if not user_id:
-        return Response({"status":"error", "message": "enter User id please"}, status=status.HTTP_400_BAD_REQUEST)
-    
-    if not request.user.is_superuser and request.user.user_id != int(user_id):
-        return Response({"status":"error", "message": "you can not delete others profile"}, status=status.HTTP_403_FORBIDDEN)
-
-    try:
-        user = User.objects.get(user_id = user_id)
-        user.delete()
-        activity(request.user, f"{request.user.username} deleted his profile: {user.username}")
-        return Response({"status":"success", "message": "User deleted"}, status=status.HTTP_200_OK)
-    except User.DoesNotExist:
-        return Response({"status":"error", "message": "User not found"}, status= status.HTTP_404_NOT_FOUND)
 
 # View All Users
 @api_view(['POST'])
