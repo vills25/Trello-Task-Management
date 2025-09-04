@@ -8,12 +8,12 @@ from trello_app.serializers import *
 from .authentication import activity
 import json
 
-# Search Task Cards by..    
+# Search Task Cards by.. various criteria including ID, title, board, description, creator, completion status, and starred status
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def search_tasks_by(request):
     try:
-
+        # Base queryset: get all task cards where user is a board member, ordered by starred status
         queryset = TaskCard.objects.filter(board__members=request.user).order_by('-is_starred')
         
         task_id = request.data.get('task_id')
@@ -59,7 +59,7 @@ def search_tasks_by(request):
     except Exception as e:
         return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-# Sort lists of card by newest, oldest first and by Alphabet
+# Sort task lists by newest, oldest, alphabetically, or by due date
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def sort_task_lists(request):
@@ -103,14 +103,16 @@ def create_task(request):
         return Response({"status":"error", "message": "Please fill all required fields"}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        try:
+        try: # Get the board where the task will be created
             board = Board.objects.get(board_id=data.get("board_id"))
         except Board.DoesNotExist:
             return Response({"status":"error", "message": "Board does not exist"}, status=status.HTTP_404_NOT_FOUND)
 
+        # Check if user is a member of the board
         if user not in board.members.all():
             return Response({"status":"error", "message": "You are not a member of this board"}, status=status.HTTP_403_FORBIDDEN)
 
+        # Define valid task status options
         valid_status = ["pending", "doing", "Completed"]
         is_completed = data.get("is_completed", "pending")
 
@@ -148,7 +150,7 @@ def update_task(request):
         task_c = TaskCard.objects.get(task_id=task_id)
     except TaskCard.DoesNotExist:
         return Response({"status":"error", "message": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
-
+    # Check if user is the creator of the task (authorization)
     if request.user != task_c.created_by:
         return Response({"status":"error", "message": "You cannot edit this task"}, status=status.HTTP_403_FORBIDDEN)
 
@@ -178,12 +180,13 @@ def update_task(request):
 @permission_classes([IsAuthenticated])
 def delete_task(request):
 
-    task_id = request.data.get("task_id")
-    if not task_id:
+    get_task_id = request.data.get("task_id")
+    if not get_task_id:
         return Response({"status":"error", "message": "Task ID is Required"}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        task = TaskCard.objects.get(id=task_id)
+        task = TaskCard.objects.get(task_id=get_task_id)
+        # Check if user is the creator of the task (authorization)
         if request.user != task.created_by:
             return Response({"status":"error", "message": "You cannot delete this task"}, status=status.HTTP_403_FORBIDDEN)
 
@@ -197,7 +200,7 @@ def delete_task(request):
     except Exception as e:
         return Response({"status":"error", "message": str(e)}, status=status.HTTP_404_NOT_FOUND)
 
-# Give Star To Task
+# Toggle the TaskCard status as Stared or Unstarred
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def star_task_card(request):
@@ -206,7 +209,9 @@ def star_task_card(request):
         return Response({"status":"error", "message":"please enter task_id"}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
+        # Get the task to star/unstar
         task = TaskCard.objects.get(task_id=task_id)
+        # Toggle the starred status
         task.is_starred = not task.is_starred
         task.save()
 
@@ -232,13 +237,14 @@ def move_task_card_to_other_board(request):
         return Response({"status":"error", "message":"please enter task_id and new_board_id"},status = status.HTTP_400_BAD_REQUEST)
 
     try:
-        
+        # Get the task to move (must be created by the user)
         get_task = TaskCard.objects.get(task_id=enter_task_id, created_by=request.user)
+        # Get the new board (must be created by the user)
         enter_new_board = Board.objects.get(board_id=new_board_id, created_by=request.user)
 
+        # Update the task's board reference
         get_task.board = enter_new_board
         get_task.save()
-        
 
         serializers = TaskCardSerializer(get_task)
         activity(request.user, f"{request.user.full_name} moved task: {get_task.title} to board: {enter_new_board.title}")
@@ -253,16 +259,18 @@ def move_task_card_to_other_board(request):
     except Exception as e:
         return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-# Copy Tasks Card   OK
+# Copy a Task Card along with its task lists, images, attachments, and comments
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def copy_task_card(request):
 
     try:
+        # Get the original TaskCard ID from request
         original_task_card_id = request.data.get("task_id")
         if not original_task_card_id:
             return Response({"status":"error", "message": "Task ID is Required"}, status=status.HTTP_400_BAD_REQUEST)
         
+        # Get the original task card (must be created by the user)
         get_task_card = TaskCard.objects.get(task_id=original_task_card_id, created_by=request.user)
 
         # this will create a copy of the task card
@@ -277,9 +285,10 @@ def copy_task_card(request):
                 updated_by=get_task_card.updated_by,
             
             )
-        # this will create a copy of the task lists
+            # Copy all task lists from the original task card
             for tasklist in get_task_card.task_lists.all():
                 with transaction.atomic():
+                    # Create a copy of each task list
                     new_tasklist =TaskList.objects.create(
                         task_card=copy_task_card,
                         tasklist_title=tasklist.tasklist_title,
@@ -326,9 +335,9 @@ def copy_task_card(request):
     except Exception as e:
         return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-###########################################################################################################################################
-#          TASK LISTS         #############################################################################################################
-###########################################################################################################################################
+#########################################################
+#          TASK LISTS        
+#########################################################
 
 # Function  for create Taskslists
 @api_view(['POST'])
@@ -340,13 +349,15 @@ def create_task_lists(request):
         return Response({"status":"error","message":"Please Enter task_id"}, status = status.HTTP_400_BAD_REQUEST)
 
     try:
+        # Get the task card where the task list will be created
         task = TaskCard.objects.get(task_id=get_task_id)
     except TaskCard.DoesNotExist:
         return Response({"status":"error", "message": "Entered TaskCard Not exist"}, status=status.HTTP_400_BAD_REQUEST)
 
+     # Get assigned user ID if provided
     assigned_to_id = request.data.get("assigned_to")
     assigned_to_user = None
-    if assigned_to_id:
+    if assigned_to_id:  # If assigned user ID is provided, get the user object
         try:
             assigned_to_user = User.objects.get(user_id=assigned_to_id)
         except User.DoesNotExist:
@@ -354,6 +365,7 @@ def create_task_lists(request):
     
     try:
         with transaction.atomic():
+            # Create the new task list
             task_list = TaskList.objects.create(
                 task_card = task,
                 tasklist_title = request.data.get("tasklist_title"),
@@ -367,9 +379,11 @@ def create_task_lists(request):
                 created_by = request.user
             )
 
+            # save any uploaded image
             for img in request.FILES.getlist("images"):
                 TaskImage.objects.create(tasks_lists_id=task_list, task_image=img)
 
+            # save any uploaded attachments
             for file in request.FILES.getlist("attachments"):
                 TaskAttachment.objects.create(tasks_lists_id=task_list, task_attachment=file)
 
@@ -389,15 +403,16 @@ def update_tasks_lists(request):
     if not task_list_id:
         return Response({"status":"error", "message":"Please Enter task_list_id"}, status= status.HTTP_400_BAD_REQUEST)
 
-    try:
+    try:    # Get the task list to update (must be created by the user)
        task_list = TaskList.objects.get(tasklist_id=task_list_id, created_by=request.user)
     except TaskList.DoesNotExist:
         return Response({"status":"error", "message": "Task list not found"}, status=status.HTTP_404_NOT_FOUND)
 
+    # Check if user is the creator of the task list (authorization)
     if request.user != task_list.created_by:
         return Response({"status":"error", "message": "You cannot edit this task"}, status=status.HTTP_403_FORBIDDEN)
     
-    try:
+    try:    # Get the first image and attachment associated with the task list
         task_image = TaskImage.objects.filter(tasks_lists_id=task_list).first()
         task_attachment = TaskAttachment.objects.filter(tasks_lists_id=task_list).first()
 
@@ -406,7 +421,8 @@ def update_tasks_lists(request):
 
     try:
         
-        with transaction.atomic():    
+        with transaction.atomic(): 
+            # Update task list fields with new values or keep existing ones   
             task_list.tasklist_title = request.data.get("tasklist_title", task_list.tasklist_title)
             task_list.tasklist_description = request.data.get("tasklist_description", task_list.tasklist_description)
             task_list.priority = request.data.get("priority", task_list.priority)
@@ -415,25 +431,28 @@ def update_tasks_lists(request):
             task_list.due_date = request.data.get("due_date", task_list.due_date)
             task_list.is_completed = request.data.get("is_completed", task_list.is_completed)
             task_list.assigned_to = request.data.get("assigned_to", task_list.assigned_to)
-             
+            
+            # Process image upload if provided
             if "image" in request.FILES:
-                if task_image:
+                if task_image:  # Update existing image
                     task_image.task_image = request.FILES["image"]
                     task_image.save()
                     activity(request.user, f"Full_Name: {request.user.full_name}, updated task image>>{task_image.task_image.name} in task: {task_list.tasklist_title} in board: {task_list.task_card.board.title}")
-                else:
+                else:   # Create new image
                     TaskImage.objects.create(tasks_lists_id=task_list, task_image=request.FILES["image"])
                     activity(request.user, f"Full_Name: {request.user.full_name}, Uploaded image>>{request.FILES['image'].name} for task: {task_list.tasklist_title} in board: {task_list.task_card.board.title}")
 
+            # Process attachment upload if provided
             if "attachment" in request.FILES:
-                if task_attachment:
+                if task_attachment:  # Update existing attachment
                     task_attachment.task_attachment = request.FILES["attachment"]
                     task_attachment.save()
                     activity(request.user, f"Full_Name: {request.user.full_name}, updated task attachment>>{task_attachment.task_attachment.name} for task: {task_list.tasklist_title} in board: {task_list.task_card.board.title}")
-                else:
+                else:   # Create new attachment
                     TaskAttachment.objects.create(tasks_lists_id=task_list, task_attachment=request.FILES["attachment"])
                     activity(request.user, f"Full_Name: {request.user.full_name}, Attached Files>>{request.FILES['attachment'].name} for task: {task_list.tasklist_title} in board: {task_list.task_card.board.title}")
 
+        # Save the updated task list
         task_list.save()
         activity(request.user, f"{request.user.full_name} updated task list: {task_list.tasklist_title} in task: {task_list.task_card.title}")
 
@@ -452,13 +471,13 @@ def tasks_lists_delete(request):
     if not get_task_list_id:
         return Response({"status":"error", "message":"Please Enter task_list_id"}, status= status.HTTP_400_BAD_REQUEST)
 
-    try:
+    try:    # Get the task list to delete (must be created by the user)
         task_list = TaskList.objects.get(tasklist_id=get_task_list_id, created_by=request.user)
 
-        if request.user != task_list.created_by:
+        if request.user != task_list.created_by:  # Check if user is the creator of the task list (authorization)  
             return Response({"status":"error", "message": "You cannot delete this task"}, status=status.HTTP_403_FORBIDDEN)
 
-        task_list.delete()
+        task_list.delete()  # Delete the task list
 
         activity(request.user, f"{request.user.full_name} deleted task list: {task_list.tasklist_title} in task: {task_list.task_card.title}")
 
@@ -470,18 +489,21 @@ def tasks_lists_delete(request):
     except Exception as e:
         return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-# Copy task lists  OK
+# Copy a Task List along with its images, attachments, and comments
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def copy_task_list(request):
     try:
+        # Get the original task list ID from request
         original_task_list_id = request.data.get("task_list_id")
         if not original_task_list_id:
             return Response({"status":"error", "message":"Please Enter task_list_id"}, status= status.HTTP_400_BAD_REQUEST)
-        
+
+        # Get the original task list (must be created by the user)
         get_task_list = TaskList.objects.get(tasklist_id=original_task_list_id, created_by=request.user)
         
         with transaction.atomic():
+            # Create a copy of the task list
             copy_task_list = TaskList.objects.create(
                         task_card=get_task_list.task_card,                              
                         tasklist_title  =  get_task_list.tasklist_title,
@@ -529,20 +551,25 @@ def copy_task_list(request):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-# Move tasks list to other tasks card  OK
+# Move tasks list to other tasks card 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def move_task_list(request):
     try:
+        # Get task list ID and new task card ID from request
         enter_tasklist_id = request.data.get("task_list_id")
         new_task_card_id = request.data.get("new_task_card_id")
         
         if not enter_tasklist_id or new_task_card_id:
             return Response({"status":"success", "message":"Please enter task_list_id, new_task_card_id "}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Get the task list to move (must be created by the user)
         task_list = TaskList.objects.get(tasklist_id = enter_tasklist_id, created_by = request.user)
+
+        # Get the new task card (must be created by the user)
         new_task_card = TaskCard.objects.get(task_id = new_task_card_id, created_by = request.user)
         
+        # Update the task list's task card reference
         task_list.task_card = new_task_card
         task_list.save()
 
@@ -560,18 +587,20 @@ def move_task_list(request):
     except Exception as e:
         return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-# checklist box with title
+# Manage checklist items for a task list with title
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def tasklist_checklist_progress(request):
-    try:
+    try:    # Get task list ID and checklist items from request
         task_list_id = request.data.get("task_list_id")
         get_checklist_items = request.data.get("checklist_items", {})
 
         if not task_list_id:
             return Response({"status": "error", "message": "task_list_id is required"}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Get the task list to update (must be created by the user)
         task_list = TaskList.objects.get(tasklist_id=task_list_id, created_by=request.user)
+
         # Merging old and new checklist items
         old_checklist = task_list.checklist_items or {"title": "", "items": []}  # Ensure old checklist is initialized
         title = get_checklist_items.get("title", old_checklist.get("title", ""))
@@ -590,6 +619,7 @@ def tasklist_checklist_progress(request):
         # Preserving the order of items based on their first occurrence
         result = {"title": title,"items": [merged[key] for key in merged]}
 
+        # Update the task list's checklist items
         task_list.checklist_items = result
         task_list.save()
 
@@ -605,10 +635,11 @@ def tasklist_checklist_progress(request):
     except Exception as e:
         return Response({"status": "error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-#update check Box
+# Update the checked status of a checklist item
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 def edit_checkbox(request):
+    # Get TaskList ID, item name, and checked status from request
     get_tasklist_id = request.data.get("tasklist_id")
     get_item_name = request.data.get("name")
     get_is_checked = request.data.get("is_checked", False)
@@ -616,16 +647,21 @@ def edit_checkbox(request):
     if not get_tasklist_id or not get_item_name:
         return Response({"status": "error", "message": "tasklist_id and item name are required"},status=status.HTTP_400_BAD_REQUEST)
 
-    try:
+    try:   
+        # Get the task list to update (must be created by the user)
         task_list = TaskList.objects.get(tasklist_id=get_tasklist_id, created_by=request.user)
 
+        # Get the current checklist items
         checklist = task_list.checklist_items or {}
 
+        # If checklist is stored as string, parse it to JSON
         if isinstance(checklist, str):
             checklist = json.loads(checklist)
-
+        
+        # Get the items from the checklist
         items = checklist.get("items", [])
 
+        # Find and update the specified item
         updated = False
         for item in items:
             if item.get("name") == get_item_name:
@@ -636,6 +672,7 @@ def edit_checkbox(request):
         if not updated:
             return Response({"status": "error", "message": f"checklist item '{get_item_name}' not found"},status=status.HTTP_404_NOT_FOUND)
 
+        # Update the checklist items
         checklist["items"] = items
         task_list.checklist_items = checklist
         task_list.save()
@@ -654,35 +691,43 @@ def edit_checkbox(request):
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
 def delete_checklist(request):
+    # Get task list ID and optional item name from request
     get_tasklist_id = request.data.get("tasklist_id")
     get_item_name = request.data.get("name")
 
     try:
+        # Get the task list to update (must be created by the user)
         task_list = TaskList.objects.get(tasklist_id=get_tasklist_id, created_by=request.user)
 
+        # Get the current checklist items
         checklist = task_list.checklist_items or {}
+
+        # If checklist is stored as string, parse it to JSON
         if isinstance(checklist, str):
-            import json
             checklist = json.loads(checklist)
 
+        # Get the items from the checklist
         items = checklist.get("items", [])
 
         # Check if specific item or CheckBox provided and delete them.
-        if get_item_name:
+        if get_item_name: # filter out that specified item
             new_items = [item for item in items if item.get("name") != get_item_name]
 
             if len(new_items) == len(items):
                 return Response({"status": "error", "message": f"item '{get_item_name}' not found in checklist"},status=status.HTTP_404_NOT_FOUND)
 
+            # Update the checklist items
             checklist["items"] = new_items
             task_list.checklist_items = checklist
             msg = f"checklist item '{get_item_name}' deleted successfully"
+
             activity(request.user, f"{request.user.full_name} deleted checklist item '{get_item_name}' from {task_list.tasklist_title}")
 
         # If no item provided then delete entire CheckBox
         else:
             task_list.checklist_items = {"title": checklist.get("title", ""), "items": []}
             msg = "All checklist items deleted"
+
             activity(request.user, f"{request.user.full_name} cleared all checklist items in {task_list.tasklist_title}")
 
         task_list.save()
@@ -705,14 +750,17 @@ def convert_checkbox_to_tasklist(request):
         return Response({"status": "error", "message": "tasklist_id and item name are required"},status=status.HTTP_400_BAD_REQUEST,)
 
     try:
-
+        # Get the task list containing the checklist (must be created by the user)
         task_list = TaskList.objects.get(tasklist_id=get_tasklist_id, created_by=request.user)
 
-        checklist = task_list.checklist_items or {}
-        checklist_items = checklist.get("items", [])
+        # Get the checklist items
+        checklist = task_list.checklist_items or {} # If task_list.checklist_items is None or empty (falsy), it will assigns an empty dictionary {} instead.
+        checklist_items = checklist.get("items", []) # If "items" doesn’t exist, it defaults to an empty list [].
 
+        # Find the specified checklist item
         for item in checklist_items:
             if item.get("name") == get_item_name:
+                # Create a new task list from the checklist item
                 new_task = TaskList.objects.create(
                     tasklist_title=item.get("name"),
                     tasklist_description=item.get("description", ""),

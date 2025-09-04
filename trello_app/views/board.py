@@ -2,21 +2,21 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
-from django.db import transaction
+from django.db import transaction   # For atomic DB transactions (to ensures rollback if any part fails)
 from trello_app.models import *
 from trello_app.serializers import *
 from datetime import date, timedelta
 from django.utils import timezone
 from .authentication import activity
-import csv, io, pandas as datetime
-from reportlab.lib.pagesizes import A4
-from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
-import pandas as pd
-import os
-from django.conf import settings
-from django.core.mail import send_mail
-import json
+import csv, io, pandas as datetime  
+from reportlab.lib.pagesizes import A4  # Page size for PDF export
+from reportlab.lib import colors  # Colors for PDF styling
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle  # PDF generation utilities
+import pandas as pd  # Pandas for Excel export
+import os # File path handling
+from django.conf import settings  
+from django.core.mail import send_mail   # Django’s built-in email function
+import json # export data in JSON file
 from django.db.models import Q
 
 # Create User Board
@@ -34,9 +34,10 @@ def create_board(request):
                 visibility=data.get("visibility", "private"),
                 created_by=request.user
             )
-            # add board creator as a member
+            # add board creator as a default member
             board.members.add(request.user)
-            
+
+            # Add extra members if provided
             if members_emails:
                 extra_members = User.objects.filter(email__in=members_emails)
                 board.members.add(*extra_members)
@@ -61,7 +62,7 @@ def update_board(request):
         board = Board.objects.get(board_id=board_id) 
     except Board.DoesNotExist:
         return Response({"status":"error", "message": "Board not found"}, status= status.HTTP_404_NOT_FOUND)
-
+    # Only creator can update
     if board.created_by != request.user:
         return Response({"status": "error", "message": "you can not update other's boards."}, status=status.HTTP_403_FORBIDDEN)
 
@@ -69,6 +70,7 @@ def update_board(request):
     try:
          with transaction.atomic():
 
+            # Update board fields if provided
             if 'title' in data:
                 board.title = data['title'] 
     
@@ -98,7 +100,8 @@ def delete_board(request):
         board_id = request.data.get("board_id")
         if not board_id:
             return Response({"status":"error", "message":"please enter board_id"}, status=status.HTTP_400_BAD_REQUEST)
-        
+
+        # Check board belongs to requesting user
         board = Board.objects.get(board_id=board_id, created_by=request.user)
         if board.created_by != request.user:
             return Response({"status": "error", "message": "you can not delete the board"}, status=status.HTTP_403_FORBIDDEN)
@@ -111,7 +114,7 @@ def delete_board(request):
         return Response({"status":"error", "message": "Board not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
-# Add/Assign Member to Board
+# Add/Assign Member to Board, Only superuser or board creator
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def add_member_to_board(request):
@@ -127,12 +130,16 @@ def add_member_to_board(request):
                               status=status.HTTP_403_FORBIDDEN)
 
         board = Board.objects.get(board_id=board_id, created_by=request.user)
-        
+
+        # Clean email list
         user_emails = [e.strip().lower() for e in user_emails]
+
+        # Find existing users
         found_users = User.objects.filter(email__in=user_emails)
         found_emails = set(found_users.values_list("email", flat=True))
         not_found = [e for e in user_emails if e not in found_emails]
 
+        # Add found users
         if found_users:
             board.members.add(*found_users)
             activity(request.user, f"{request.user.username} added members to board, title: {board.title}")
@@ -317,7 +324,7 @@ def get_my_board(request):
         url_path = request.META.get('HTTP_HOST', '')
         tasks = tasks.distinct()
 
-        # Get all task from tasks through loop and add into "task_list_data = []"
+        # Get task from tasks through loop and add into "task_list_data = []"
         for task in tasks:
             tasks_lists = TaskList.objects.filter(task_card=task)
             
@@ -392,7 +399,7 @@ def search_boards(request):
     except Exception as e:
         return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-# Give Star To Board
+# Toggle star/unstar on a board for the current user.
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def star_board(request):
@@ -436,7 +443,7 @@ def print_export(request):
         if not user in tasks.board.members.all():
             return Response({"status": "error", "message": "You are not a member of this board"}, status=status.HTTP_403_FORBIDDEN)
 
-    ##### JSON #####
+    ##### JSON #####  Export all tasks of a board into JSON format.
         if export_format == "json":
             serializer = TaskCardSerializer(tasks)
             file_name = f"boards_task{task_id}.json"
@@ -447,7 +454,7 @@ def print_export(request):
                 json.dump(serializer.data, json_file)
             return Response({"status": "success", "message": f"json file location {file_path}"}, status=status.HTTP_200_OK,)
 
-    ##### CSV #####
+    ##### CSV #####  Export all tasks of a board into CSV format.
         if export_format == "csv":
             file_name = f"boards_task{task_id}.csv"
             file_path = os.path.join(settings.MEDIA_ROOT, "exports", file_name)
@@ -456,12 +463,17 @@ def print_export(request):
 
             with open(file_path, 'w', newline='') as csv_file:
                 writer = csv.writer(csv_file)
-                writer.writerow(["Task ID", "Title", "Description", "Board", "Status"])
-                writer.writerow([tasks.task_id, tasks.title, tasks.description, tasks.board.title, tasks.is_completed])
+                # Write headers
+                writer.writerow(["Task ID", "Title", "Description", "Due Date", "Assigned Users"])
+                
+                assigned_users = ", ".join([user.username for user in tasks.assigned_to.all()])
+                writer.writerow([tasks.task_id, tasks.title, tasks.description, tasks.due_date, assigned_users])
 
-            return Response({"status": "success", "message": f"CSV file location {file_path}"}, status=status.HTTP_200_OK)
-
-    ##### PDF #####
+            return Response(
+                {"status": "success", "message": f"CSV file location {file_path}"},
+                status=status.HTTP_200_OK
+            )
+    ##### PDF #####  Export all tasks of a board into PDF format.
         elif export_format == "pdf":
             file_name = f"task_{task_id}.pdf"
             file_path = os.path.join(settings.MEDIA_ROOT, "exports", file_name)
@@ -489,12 +501,13 @@ def print_export(request):
                 ("BACKGROUND", (0, 1), (-1, -1), colors.whitesmoke),
                 ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
             ]))
-
+            
+            # prepare PDF
             pdf.build([table])
 
             return Response({"status": "success", "message": f"PDF file location {file_path}"}, status=status.HTTP_200_OK,)
 
-    ##### EXCEL #####
+    ##### EXCEL #####   Export all tasks of a board into EXCEL format.
         elif export_format == "excel":
 
             file_name = f"boards_task{task_id}.xlsx"
@@ -503,6 +516,7 @@ def print_export(request):
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
             boards = Board.objects.filter(created_by=user)
+            # Prepare DataFrame
             rows = []
             for board in boards:
                 for task in board.task_cards.all():
@@ -546,7 +560,10 @@ def share_invite(request):
         if not request.user in board.members.all():
             return Response({"status": "error", "message": "You are not a member of this board"}, status=status.HTTP_403_FORBIDDEN)
 
+        # Get board__id from request and email from logged in user and sent email using django's built-in send_mail() function
         link = f"http://trellotaskmanagement.com/invite?board_id={board.board_id}&email={user.email}"
+        
+        # django's built-in send_mail() function
         send_mail(
             subject=f"link for join board: {board.title}",
             message=f"click the link for join the board: {link}",
@@ -572,15 +589,20 @@ def share_invite(request):
 @permission_classes([IsAuthenticated])
 def notifications(request):
     user = request.user
+
+    # Get today's date and calculate upcoming date (2 days from now)
     today = timezone.now().date()
     upcoming = today + timedelta(days=2)
 
+    # Query for upcoming tasks that are either assigned to the user or belong to boards where the user is a member
     upcoming_tasks = TaskList.objects.filter(
-        Q(assigned_to=user) | Q(task_card__board__members=user), due_date=upcoming, is_completed=False).distinct().order_by('due_date')
+        Q(assigned_to=user) | Q(task_card__board__members=user), due_date=upcoming, is_completed=False).distinct().order_by('due_date') # Remove duplicates and order by due date
 
     # Send reminder emails
     for task in upcoming_tasks:
+         # Check if the task is assigned to someone with an email address
         if task.assigned_to and task.assigned_to.email:
+            # Create email subject and message
             subject = f"Reminder: Task '{task.tasklist_title}' is due soon"
             message = (
                 f"Hello {task.assigned_to.username},\n\n"
@@ -588,7 +610,8 @@ def notifications(request):
                 f"Please complete it before the deadline."
             )
 
-    send_mail(subject, message, None, [task.assigned_to.email], fail_silently=False)
+    send_mail(subject, message, None, [task.assigned_to.email], fail_silently=False ) 
+    # fail_silently=False -->> Raise errors if email fails to send
 
     activity(request.user, f"{request.user.username} viewed notifications")
 
