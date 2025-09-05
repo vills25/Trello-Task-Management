@@ -1,0 +1,5 @@
+TaskList ID,Task Card,TaskList Title,TaskList Description,Priority,Label Color,Start Date,Due Date,CheckList Items,Assigned User,Status
+1,Q4 Marketing Launch,Define campaign goals,Set SMART goals for holiday launch.,High,red,2025-09-01,2025-09-05,"{'title': 'Project Checklist', 'items': [{'name': 'Setup Backend', 'done': True}, {'name': 'Setup Frontend', 'done': True}, {'name': 'Create Database', 'done': False}, {'name': 'Deploy', 'done': False}]}",Unassigned,Pending
+2,Q4 Marketing Launch,Content planning,"Decide creatives, copies, and video ads",Medium,blue,2025-09-06,2025-09-12,"{'title': 'Checklist', 'items': [{'name': 'video edit', 'done': False}]}",@arjun03,Pending
+17,Q4 Marketing Launch,video edit,,low,green,,,{},Unassigned,Pending
+18,Q4 Marketing Launch,Photo edit,,low,green,,,{},Unassigned,Pending

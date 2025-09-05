@@ -6,7 +6,14 @@ from django.db import transaction
 from trello_app.models import *
 from trello_app.serializers import *
 from .authentication import activity
-import json
+import json # export data in JSON file
+from django.conf import settings
+import csv, io, pandas as datetime  
+from reportlab.lib.pagesizes import A4  # Page size for PDF export
+from reportlab.lib import colors  # Colors for PDF styling
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle  # PDF generation utilities
+import pandas as pd  # Pandas for Excel export
+import os # File path handling
 
 # Search Task Cards by.. various criteria including ID, title, board, description, creator, completion status, and starred status
 @api_view(['POST'])
@@ -46,15 +53,15 @@ def search_tasks_by(request):
                 queryset = queryset.filter(is_starred__icontains=is_starred)
 
         if not queryset.exists():
-                return Response({"status":"error", "message": "No matching Tasks found"}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"status":"fail", "message": "No matching Tasks found"}, status=status.HTTP_404_NOT_FOUND)
         
         activity(request.user, f"{request.user.full_name} Searched Tasks")
         serializer = TaskCardSerializer(queryset, many=True, context={'request': request})
 
-        return Response({"status":"success", "Task card": serializer.data}, status=status.HTTP_200_OK)
+        return Response({"status":"success", "message":"TaskCard fetched","Task card": serializer.data}, status=status.HTTP_200_OK)
 
     except TaskCard.DoesNotExist:
-        return Response({"status":"error", "message":"TaskCard not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"status":"fail", "message":"TaskCard not found"}, status=status.HTTP_404_NOT_FOUND)
     
     except Exception as e:
         return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -67,11 +74,11 @@ def sort_task_lists(request):
     sort_by = request.data.get("sort_list_by")
     
     if not task_id:
-        return Response({"status":"error", "message": "task_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"fail", "message": "task_id is required"}, status=status.HTTP_400_BAD_REQUEST)
     try:
         queryset = TaskList.objects.filter(task_card_id=task_id)
     except TaskCard.DoesNotExist:
-        return Response({"status": "error", "message": "TaskCard not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"status": "fail", "message": "TaskCard not found"}, status=status.HTTP_404_NOT_FOUND)
 
     try:
         if sort_by == "newest_first":
@@ -86,10 +93,10 @@ def sort_task_lists(request):
             return Response({"status": "fail", "error": "invalid choice"}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = TaskListSerializer(queryset, many=True, context={'request': request})
-        return Response({"status": "success", "Task lists": serializer.data}, status=status.HTTP_200_OK)
+        return Response({"status": "success","message":"TaskCard sorted" ,"Task lists": serializer.data}, status=status.HTTP_200_OK)
 
     except Exception as e:
-        return Response({"status": "fail", "error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status": "error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 # Create Task Card
 @api_view(['POST'])
@@ -100,24 +107,24 @@ def create_task(request):
     required_fields = ['title', 'description', 'board_id']
 
     if not all(field in data and data.get(field) for field in required_fields):
-        return Response({"status":"error", "message": "Please fill all required fields"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"fail", "message": "Please fill all required fields"}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
         try: # Get the board where the task will be created
             board = Board.objects.get(board_id=data.get("board_id"))
         except Board.DoesNotExist:
-            return Response({"status":"error", "message": "Board does not exist"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"status":"fail", "message": "Board does not exist"}, status=status.HTTP_404_NOT_FOUND)
 
         # Check if user is a member of the board
         if user not in board.members.all():
-            return Response({"status":"error", "message": "You are not a member of this board"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"status":"fail", "message": "You are not a member of this board"}, status=status.HTTP_403_FORBIDDEN)
 
         # Define valid task status options
         valid_status = ["pending", "doing", "Completed"]
         is_completed = data.get("is_completed", "pending")
 
         if is_completed not in valid_status:
-            return Response({"status":"error", "message": "Invalid task status."},status=status.HTTP_400_BAD_REQUEST)
+            return Response({"status":"fail", "message": "Invalid task status."},status=status.HTTP_400_BAD_REQUEST)
 
         with transaction.atomic():
             task = TaskCard.objects.create(
@@ -144,15 +151,15 @@ def update_task(request):
     data = request.data
     task_id = data.get("task_id")
     if not task_id:
-        return Response({"status":"error", "message": "task_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"fail", "message": "task_id is required"}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
         task_c = TaskCard.objects.get(task_id=task_id)
     except TaskCard.DoesNotExist:
-        return Response({"status":"error", "message": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"status":"fail", "message": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
     # Check if user is the creator of the task (authorization)
     if request.user != task_c.created_by:
-        return Response({"status":"error", "message": "You cannot edit this task"}, status=status.HTTP_403_FORBIDDEN)
+        return Response({"status":"fail", "message": "You cannot edit this task"}, status=status.HTTP_403_FORBIDDEN)
 
     try:
         with transaction.atomic():  
@@ -170,7 +177,7 @@ def update_task(request):
             activity(request.user, f"Full_Name: {request.user.full_name}, updated task: {task_c.title} in board: {task_c.board.title}")
             
             serializer = TaskCardSerializer(task_c)
-            return Response({"status":"success, Updated","Updated task Details":serializer.data}, status=status.HTTP_200_OK)
+            return Response({"status":"success","message": "TaskCard Updated","Updated TaskCard Detail":serializer.data}, status=status.HTTP_200_OK)
 
     except Exception as e:
         return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -182,20 +189,20 @@ def delete_task(request):
 
     get_task_id = request.data.get("task_id")
     if not get_task_id:
-        return Response({"status":"error", "message": "Task ID is Required"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"fail", "message": "Task ID is Required"}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
         task = TaskCard.objects.get(task_id=get_task_id)
         # Check if user is the creator of the task (authorization)
         if request.user != task.created_by:
-            return Response({"status":"error", "message": "You cannot delete this task"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"status":"fail", "message": "You cannot delete this task"}, status=status.HTTP_403_FORBIDDEN)
 
         task.delete()
         activity(request.user, f"{request.user.full_name} deleted task: {task.title} in board: {task.board.title}")
         return Response({"status":"success", "message": "Task deleted successfully"}, status= status.HTTP_200_OK)
 
     except TaskCard.DoesNotExist:
-        return Response({"status":"error", "message": "Task not found"}, status= status.HTTP_404_NOT_FOUND)
+        return Response({"status":"fail", "message": "Task not found"}, status= status.HTTP_404_NOT_FOUND)
 
     except Exception as e:
         return Response({"status":"error", "message": str(e)}, status=status.HTTP_404_NOT_FOUND)
@@ -206,7 +213,7 @@ def delete_task(request):
 def star_task_card(request):
     task_id = request.data.get('task_id')
     if not task_id:
-        return Response({"status":"error", "message":"please enter task_id"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"fail", "message":"please enter task_id"}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
         # Get the task to star/unstar
@@ -220,7 +227,7 @@ def star_task_card(request):
         return Response({"status":"success", "message": "Task star status updated", "is_starred": task.is_starred})
 
     except TaskCard.DoesNotExist:
-        return Response({"status":"error", "message": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"status":"fail", "message": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
 
     except Exception as e:
         return Response({"status":"error", "message": str(e)}, status=status.HTTP_404_NOT_FOUND)
@@ -234,7 +241,7 @@ def move_task_card_to_other_board(request):
     new_board_id = request.data.get("new_board_id")
 
     if not enter_task_id and not new_board_id in request.data:
-        return Response({"status":"error", "message":"please enter task_id and new_board_id"},status = status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"fail", "message":"please enter task_id and new_board_id"},status = status.HTTP_400_BAD_REQUEST)
 
     try:
         # Get the task to move (must be created by the user)
@@ -251,10 +258,10 @@ def move_task_card_to_other_board(request):
         return Response({"status":"success", "message": "Task moved successfully", "Task Data": serializers.data}, status=status.HTTP_200_OK)
 
     except TaskCard.DoesNotExist:
-        return Response({"status":"error", "message": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"status":"fail", "message": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
 
     except Board.DoesNotExist:
-        return Response({"status":"error" ,"message": "board not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"status":"fail" ,"message": "board not found"}, status=status.HTTP_404_NOT_FOUND)
 
     except Exception as e:
         return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -268,7 +275,7 @@ def copy_task_card(request):
         # Get the original TaskCard ID from request
         original_task_card_id = request.data.get("task_id")
         if not original_task_card_id:
-            return Response({"status":"error", "message": "Task ID is Required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"status":"fail", "message": "Task ID is Required"}, status=status.HTTP_400_BAD_REQUEST)
         
         # Get the original task card (must be created by the user)
         get_task_card = TaskCard.objects.get(task_id=original_task_card_id, created_by=request.user)
@@ -330,7 +337,7 @@ def copy_task_card(request):
                         status=status.HTTP_201_CREATED)
     
     except TaskCard.DoesNotExist:
-        return Response({"status": "error", "message": "Task Card not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"status": "fail", "message": "Task Card not found"}, status=status.HTTP_404_NOT_FOUND)
 
     except Exception as e:
         return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -346,13 +353,13 @@ def create_task_lists(request):
 
     get_task_id = request.data.get("task_id")
     if not get_task_id:
-        return Response({"status":"error","message":"Please Enter task_id"}, status = status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"fail","message":"Please Enter task_id"}, status = status.HTTP_400_BAD_REQUEST)
 
     try:
         # Get the task card where the task list will be created
         task = TaskCard.objects.get(task_id=get_task_id)
     except TaskCard.DoesNotExist:
-        return Response({"status":"error", "message": "Entered TaskCard Not exist"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"fail", "message": "Entered TaskCard Not exist"}, status=status.HTTP_400_BAD_REQUEST)
 
      # Get assigned user ID if provided
     assigned_to_id = request.data.get("assigned_to")
@@ -361,7 +368,7 @@ def create_task_lists(request):
         try:
             assigned_to_user = User.objects.get(user_id=assigned_to_id)
         except User.DoesNotExist:
-            return Response({"status":"error", "message": "Assigned user does not exist"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"status":"fail", "message": "Assigned user does not exist"}, status=status.HTTP_400_BAD_REQUEST)
     
     try:
         with transaction.atomic():
@@ -389,10 +396,10 @@ def create_task_lists(request):
 
             activity(request.user, f"{request.user.full_name} created task list: {task_list.tasklist_title} in task: {task.title}")
             serializers = TaskListSerializer(task_list, context={'request': request})
-            return Response({"atatus":"success", "message": "Task list created", "Task List Data": serializers.data}, status=status.HTTP_201_CREATED)
+            return Response({"status":"success", "message": "Task list created", "Task List Data": serializers.data}, status=status.HTTP_201_CREATED)
 
     except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
 # Function for Update Tasks lists
 @api_view(['PUT'])
@@ -401,23 +408,23 @@ def update_tasks_lists(request):
 
     task_list_id = request.data.get("task_list_id")
     if not task_list_id:
-        return Response({"status":"error", "message":"Please Enter task_list_id"}, status= status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"fail", "message":"Please Enter task_list_id"}, status= status.HTTP_400_BAD_REQUEST)
 
     try:    # Get the task list to update (must be created by the user)
        task_list = TaskList.objects.get(tasklist_id=task_list_id, created_by=request.user)
     except TaskList.DoesNotExist:
-        return Response({"status":"error", "message": "Task list not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"status":"fail", "message": "Task list not found"}, status=status.HTTP_404_NOT_FOUND)
 
     # Check if user is the creator of the task list (authorization)
     if request.user != task_list.created_by:
-        return Response({"status":"error", "message": "You cannot edit this task"}, status=status.HTTP_403_FORBIDDEN)
+        return Response({"status":"fail", "message": "You cannot edit this task"}, status=status.HTTP_403_FORBIDDEN)
     
     try:    # Get the first image and attachment associated with the task list
         task_image = TaskImage.objects.filter(tasks_lists_id=task_list).first()
         task_attachment = TaskAttachment.objects.filter(tasks_lists_id=task_list).first()
 
     except (TaskImage.DoesNotExist, TaskAttachment.DoesNotExist):
-        return Response({"status":"error", "message": "Task image or attachment not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"status":"fail", "message": "Task image or attachment not found"}, status=status.HTTP_404_NOT_FOUND)
 
     try:
         
@@ -469,13 +476,13 @@ def tasks_lists_delete(request):
 
     get_task_list_id = request.data.get("task_list_id")
     if not get_task_list_id:
-        return Response({"status":"error", "message":"Please Enter task_list_id"}, status= status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"fail", "message":"Please Enter task_list_id"}, status= status.HTTP_400_BAD_REQUEST)
 
     try:    # Get the task list to delete (must be created by the user)
         task_list = TaskList.objects.get(tasklist_id=get_task_list_id, created_by=request.user)
 
         if request.user != task_list.created_by:  # Check if user is the creator of the task list (authorization)  
-            return Response({"status":"error", "message": "You cannot delete this task"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"status":"fail", "message": "You cannot delete this task"}, status=status.HTTP_403_FORBIDDEN)
 
         task_list.delete()  # Delete the task list
 
@@ -484,7 +491,7 @@ def tasks_lists_delete(request):
         return Response({"status":"successfull", "message": "Task list deleted"}, status=status.HTTP_204_NO_CONTENT)
 
     except TaskList.DoesNotExist:
-        return Response({"status":"error", "message": "Task list not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"status":"fail", "message": "Task list not found"}, status=status.HTTP_404_NOT_FOUND)
 
     except Exception as e:
         return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -497,7 +504,7 @@ def copy_task_list(request):
         # Get the original task list ID from request
         original_task_list_id = request.data.get("task_list_id")
         if not original_task_list_id:
-            return Response({"status":"error", "message":"Please Enter task_list_id"}, status= status.HTTP_400_BAD_REQUEST)
+            return Response({"status":"fail", "message":"Please Enter task_list_id"}, status= status.HTTP_400_BAD_REQUEST)
 
         # Get the original task list (must be created by the user)
         get_task_list = TaskList.objects.get(tasklist_id=original_task_list_id, created_by=request.user)
@@ -546,10 +553,10 @@ def copy_task_list(request):
                           status=status.HTTP_201_CREATED)
 
     except TaskList.DoesNotExist:
-        return Response({"status":"error", "message": "Original task list not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"status":"fail", "message": "Original task list not found"}, status=status.HTTP_404_NOT_FOUND)
 
     except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"error","message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 # Move tasks list to other tasks card 
 @api_view(['POST'])
@@ -579,10 +586,10 @@ def move_task_list(request):
         return Response({"status": "successfull", "message": "Task list moved", "Task List Data": serializers.data}, status=status.HTTP_200_OK)
 
     except TaskList.DoesNotExist:
-        return Response({"status":"error", "message": "Task list not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"status":"fail", "message": "Task list not found"}, status=status.HTTP_404_NOT_FOUND)
 
     except TaskCard.DoesNotExist:
-        return Response({"status":"error", "message": "New task card not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"status":"fail", "message": "New task card not found"}, status=status.HTTP_404_NOT_FOUND)
 
     except Exception as e:
         return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -596,7 +603,7 @@ def tasklist_checklist_progress(request):
         get_checklist_items = request.data.get("checklist_items", {})
 
         if not task_list_id:
-            return Response({"status": "error", "message": "task_list_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"status": "fail", "message": "task_list_id is required"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Get the task list to update (must be created by the user)
         task_list = TaskList.objects.get(tasklist_id=task_list_id, created_by=request.user)
@@ -630,7 +637,7 @@ def tasklist_checklist_progress(request):
                         status=status.HTTP_200_OK)
 
     except TaskList.DoesNotExist:
-        return Response({"status": "error", "message": "Task list not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"status": "fail", "message": "Task list not found"}, status=status.HTTP_404_NOT_FOUND)
 
     except Exception as e:
         return Response({"status": "error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -645,7 +652,7 @@ def edit_checkbox(request):
     get_is_checked = request.data.get("is_checked", False)
 
     if not get_tasklist_id or not get_item_name:
-        return Response({"status": "error", "message": "tasklist_id and item name are required"},status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status": "fail", "message": "tasklist_id and item name are required"},status=status.HTTP_400_BAD_REQUEST)
 
     try:   
         # Get the task list to update (must be created by the user)
@@ -670,7 +677,7 @@ def edit_checkbox(request):
                 break
 
         if not updated:
-            return Response({"status": "error", "message": f"checklist item '{get_item_name}' not found"},status=status.HTTP_404_NOT_FOUND)
+            return Response({"status": "fail", "message": f"checklist item '{get_item_name}' not found"},status=status.HTTP_404_NOT_FOUND)
 
         # Update the checklist items
         checklist["items"] = items
@@ -682,7 +689,7 @@ def edit_checkbox(request):
         return Response({"status": "success", "message": f"checklist item '{get_item_name}' updated successfully"}, status=status.HTTP_200_OK)
 
     except TaskList.DoesNotExist:
-        return Response({"status": "error", "message": "Task list not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"status": "fail", "message": "Task list not found"}, status=status.HTTP_404_NOT_FOUND)
 
     except Exception as e:
         return Response({"status": "error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -714,7 +721,7 @@ def delete_checklist(request):
             new_items = [item for item in items if item.get("name") != get_item_name]
 
             if len(new_items) == len(items):
-                return Response({"status": "error", "message": f"item '{get_item_name}' not found in checklist"},status=status.HTTP_404_NOT_FOUND)
+                return Response({"status": "fail", "message": f"item '{get_item_name}' not found in checklist"},status=status.HTTP_404_NOT_FOUND)
 
             # Update the checklist items
             checklist["items"] = new_items
@@ -734,7 +741,7 @@ def delete_checklist(request):
         return Response({"status": "success", "message": msg}, status=status.HTTP_200_OK)
 
     except TaskList.DoesNotExist:
-        return Response({"status": "error", "message": "Task list not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"status": "fail", "message": "Task list not found"}, status=status.HTTP_404_NOT_FOUND)
 
     except Exception as e:
         return Response({"status": "error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -747,7 +754,7 @@ def convert_checkbox_to_tasklist(request):
     get_item_name = request.data.get("name")
 
     if not get_tasklist_id or not get_item_name:
-        return Response({"status": "error", "message": "tasklist_id and item name are required"},status=status.HTTP_400_BAD_REQUEST,)
+        return Response({"status": "fail", "message": "tasklist_id and item name are required"},status=status.HTTP_400_BAD_REQUEST,)
 
     try:
         # Get the task list containing the checklist (must be created by the user)
@@ -772,10 +779,238 @@ def convert_checkbox_to_tasklist(request):
                 return Response({"status": "success","message": f"Checklist item '{get_item_name}' converted to task '{new_task.tasklist_title}'"},
                                   status=status.HTTP_200_OK)
 
-        return Response({"status": "error", "message": f"Checklist item '{get_item_name}' not found"}, status=status.HTTP_404_NOT_FOUND,)
+        return Response({"status": "fail", "message": f"Checklist item '{get_item_name}' not found"}, status=status.HTTP_404_NOT_FOUND,)
 
     except TaskList.DoesNotExist:
-        return Response({"status": "error", "message": "Task list not found"},status=status.HTTP_404_NOT_FOUND,)
+        return Response({"status": "fail", "message": "Task list not found"},status=status.HTTP_404_NOT_FOUND,)
 
     except Exception as e:
         return Response({"status": "error", "message": str(e)},status=status.HTTP_400_BAD_REQUEST,)
+
+# Function for comments in TaskLists
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_comment(request):
+    user = request.user
+    data = request.data
+
+    if not data.get('tasklist_id') or not data.get('comment_text'):
+        return Response({"status":"error", "message": "Task list and comment text required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        task_list = TaskList.objects.get(tasklist_id=data['tasklist_id'])
+        comment = Comment.objects.create(
+            user=user,
+            task_list=task_list,
+            comment_text=data['comment_text'],
+            created_by=request.user,
+            updated_by=request.user
+        )
+
+        activity(user, f"{user.full_name} commented on task list: {task_list.tasklist_title}")
+        serializer = CommentDetailSerializer(comment)
+        return Response({"status": "success", "message": "Comment created successfully", "Comment data": serializer.data}, 
+                        status=status.HTTP_201_CREATED)
+
+    except TaskList.DoesNotExist:
+        return Response({"status": "fail", "message": "task list does not exist"}, status=status.HTTP_404_NOT_FOUND)
+    
+    except Exception as e:
+        return Response({"status": "error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+# Function for Edit Comments in TaskLists
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def edit_comment(request):
+
+    comment_id = request.data.get('comment_id')
+    comment_text = request.data.get('comment_text')
+
+    if not comment_id or not comment_text:
+        return Response({"status":"fail", "message": "comment_id and comment_text required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:    # User can edit only their own comment
+        comment = Comment.objects.get(comment_id=request.data['comment_id'], user=request.user)
+        comment.comment_text = request.data['comment_text']
+        comment.save()
+
+        activity(request.user, f"{request.user.full_name} edited a comment on task list: {comment.task_list.tasklist_title}")
+        serializer = CommentDetailSerializer(comment)
+        return Response({"status": "success", "message": "Comment updated successfully", "Updated Comment Data": serializer.data},
+                        status=status.HTTP_200_OK)
+
+    except Comment.DoesNotExist:
+        return Response({"status": "fail", "message": "Comment does not exist"}, status=status.HTTP_404_NOT_FOUND)
+
+    except Exception as e:
+        return Response({"status": "error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+# Function for Delete Comments in TaskLists
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_comment(request):
+
+    if not request.data.get('comment_id'):
+        return Response({"status":"fail", "message": "Comment ID required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:    # User can delete only their own comment
+        comment = Comment.objects.get(comment_id=request.data['comment_id'], user=request.user)
+        comment.delete()
+        activity(request.user, f"{request.user.full_name} deleted a comment from task list: {comment.task_list.tasklist_title}")
+
+        return Response({"status": "success", "message": "Comment deleted successfully"},
+                        status=status.HTTP_200_OK)
+
+    except Comment.DoesNotExist:
+        return Response({"status": "fail", "message": "Comment does not exist"}, status=status.HTTP_404_NOT_FOUND)
+
+    except Exception as e:
+        return Response({"status": "error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+# Print, Export as PDF, Json, CSV functionality (TaskList based)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def print_export(request):
+    user = request.user
+    tasklist_id = request.data.get("tasklist_id")
+    export_format = request.data.get("format", "").lower()
+    
+    if not tasklist_id:
+        return Response({"status": "fail", "message": "tasklist_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        # Get the TaskCard (just for board relation + filter)
+        task_card = TaskCard.objects.get(task_id=tasklist_id, created_by=user)
+
+        # Permission check
+        if user not in task_card.board.members.all():
+            return Response({"status": "fail", "message": "You are not a member of this board"}, status=status.HTTP_403_FORBIDDEN)
+
+        # Get all TaskLists under this TaskCard
+        tasklists = TaskList.objects.filter(task_card=task_card)
+
+        if not tasklists.exists():
+            return Response({"status": "fail", "message": "No TaskLists found for this TaskCard"}, status=status.HTTP_404_NOT_FOUND)
+
+        # ---------------- JSON Export ----------------
+        if export_format == "json":
+            data = []
+            for tl in tasklists:
+                data.append({
+                    # "TaskCard": tl.task_card,
+                    "TaskList ID": tl.tasklist_id,
+                    "Title": tl.tasklist_title,
+                    "Description": tl.tasklist_description,
+                    "Priority": tl.priority,
+                    "Label Color": tl.label_color,
+                    "Start Date": str(tl.start_date) if tl.start_date else None,
+                    "Due Date": str(tl.due_date) if tl.due_date else None,
+                    "Assigned User": tl.assigned_to.username if tl.assigned_to else "Unassigned",
+                    "Status": "Completed" if tl.is_completed else "Pending",
+                    "CheckBox": tl.checklist_items,
+                })
+
+            file_name = f"tasklists_{tasklist_id}.json"
+            file_path = os.path.join(settings.MEDIA_ROOT, "exports", file_name)
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
+            with open(file_path, "w") as json_file:
+                json.dump(data, json_file, indent=4)
+
+            return Response({"status": "success", "message": f"JSON file saved at {file_path}"}, status=status.HTTP_200_OK)
+
+        # ---------------- CSV Export ----------------
+        elif export_format == "csv":
+            file_name = f"tasklists_{tasklist_id}.csv"
+            file_path = os.path.join(settings.MEDIA_ROOT, "exports", file_name)
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
+            with open(file_path, "w", newline="") as csv_file:
+                writer = csv.writer(csv_file)
+                writer.writerow(["TaskList ID", "Task Card","TaskList Title", "TaskList Description", "Priority", "Label Color", "Start Date", "Due Date", "CheckList Items","Assigned User", "Status"])
+
+                for tl in tasklists:
+                    writer.writerow([
+                        tl.tasklist_id,
+                        tl.task_card,
+                        tl.tasklist_title,
+                        tl.tasklist_description,
+                        tl.priority,
+                        tl.label_color,
+                        tl.start_date,
+                        tl.due_date,
+                        tl.checklist_items,
+                        tl.assigned_to.username if tl.assigned_to else "Unassigned",
+                        "Completed" if tl.is_completed else "Pending"
+                    ])
+
+            return Response({"status": "success", "message": f"CSV file saved at {file_path}"}, status=status.HTTP_200_OK)
+
+        # ---------------- PDF Export ----------------
+        elif export_format == "pdf":
+            file_name = f"tasklists_{tasklist_id}.pdf"
+            file_path = os.path.join(settings.MEDIA_ROOT, "exports", file_name)
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
+            data = [["TaskCard","TaskList Title", "Priority", "Due Date", "Assigned User", "Status"]]
+            for tl in tasklists:
+                data.append([
+                    tl.task_card,
+                    tl.tasklist_title,
+                    tl.priority,
+                    str(tl.due_date) if tl.due_date else "",
+                    tl.assigned_to.username if tl.assigned_to else "Unassigned",
+                    "Completed" if tl.is_completed else "Pending",
+                ])
+
+            pdf = SimpleDocTemplate(file_path, pagesize=A4)
+            table = Table(data, colWidths=[110, 130, 70, 80, 100, 70])
+            table.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (-1, 0), colors.lightblue),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, 0), 12),
+                ("BOTTOMPADDING", (0, 0), (-1, 0), 10),
+                ("BACKGROUND", (0, 1), (-1, -1), colors.whitesmoke),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ]))
+            pdf.build([table])
+
+            return Response({"status": "success", "message": f"PDF file saved at {file_path}"}, status=status.HTTP_200_OK)
+
+        # ---------------- Excel Export ----------------
+        elif export_format == "excel":
+            file_name = f"tasklists_{tasklist_id}.xlsx"
+            file_path = os.path.join(settings.MEDIA_ROOT, "exports", file_name)
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
+            rows = []
+            for tl in tasklists:
+                rows.append({
+                    "TaskCard": tl.task_card,
+                    "TaskList ID": tl.tasklist_id,
+                    "Title": tl.tasklist_title,
+                    "Description": tl.tasklist_description,
+                    "Priority": tl.priority,
+                    "Label Color": tl.label_color,
+                    "Start Date": tl.start_date,
+                    "Due Date": tl.due_date,
+                    "Assigned User": tl.assigned_to.username if tl.assigned_to else "Unassigned",
+                    "Status": "Completed" if tl.is_completed else "Pending",
+                    "CheckBox": tl.checklist_items,
+                })
+
+            df = pd.DataFrame(rows)
+            df.to_excel(file_path, index=False, engine="openpyxl")
+
+            return Response({"status": "success", "message": f"Excel file saved at {file_path}"}, status=status.HTTP_200_OK)
+
+        else:
+            return Response({"status": "fail", "message": "Invalid format"}, status=status.HTTP_400_BAD_REQUEST)
+
+    except TaskCard.DoesNotExist:
+        return Response({"status": "fail", "message": "TaskCard not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    except Exception as e:
+        return Response({"status": "error", "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
