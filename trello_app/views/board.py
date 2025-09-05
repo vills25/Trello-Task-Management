@@ -11,6 +11,7 @@ from .authentication import activity
 from django.conf import settings  
 from django.core.mail import send_mail   # Django’s built-in email function
 from django.db.models import Q
+from .utils import *
 
 # Create User Board
 @api_view(['POST'])

@@ -7,10 +7,10 @@ from django.db import transaction
 from django.utils import timezone
 from datetime import timedelta
 from django.contrib.auth import authenticate
-from django.core.mail import send_mail
 from trello_app.models import *
 from trello_app.serializers import *
-import random
+from .utils import generate_otp, activity, send_otp_email
+
 
 # Register User
 @api_view(['POST'])
@@ -138,18 +138,6 @@ def delete_profile(request):
 
 ###########################################################################
 
-# Generate 6-digit random OTP
-def generate_otp():
-    return str(random.randint(100000, 999999))
-
-# Send otp to user Email logic
-def send_otp_email(user_email, otp):
-    subject = "TRELLO App OTP for reset password"
-    message = f"Hello from TRELLO Task Management App.\n This is OTP for reset your password: {otp} \n This OTP will Expire in 10 minutes"
-    from_email = 'vishalsohaliya25@gmail.com'
-    recipient_list = [user_email]
-    send_mail(subject, message, from_email, recipient_list)
-
 # Forgot Password and Send mail
 @api_view(['POST'])
 def forgot_password_sent_email(request):
@@ -254,10 +242,6 @@ def view_my_profile(request):
     except Exception as e:
         return Response({"status":"error", "message":str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-
-# Function for Log activity
-def activity(user, Details):
-    return Activity.objects.create(user=user, Details=Details)
 
 # # Show user activity (own + boards they created)
 @api_view(["GET"])

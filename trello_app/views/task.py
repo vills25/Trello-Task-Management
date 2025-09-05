@@ -14,6 +14,7 @@ from reportlab.lib import colors  # Colors for PDF styling
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle  # PDF generation utilities
 import pandas as pd  # Pandas for Excel export
 import os # File path handling
+from .utils import *
 
 # Search Task Cards by.. various criteria including ID, title, board, description, creator, completion status, and starred status
 @api_view(['POST'])
@@ -400,7 +401,7 @@ def create_task_lists(request):
 
     except Exception as e:
         return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    
+
 # Function for Update Tasks lists
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
@@ -438,9 +439,12 @@ def update_tasks_lists(request):
             task_list.due_date = request.data.get("due_date", task_list.due_date)
             task_list.is_completed = request.data.get("is_completed", task_list.is_completed)
             task_list.assigned_to = request.data.get("assigned_to", task_list.assigned_to)
-            
+
             # Process image upload if provided
             if "image" in request.FILES:
+                v_m = validate_media_files(request)
+                if v_m:
+                    return v_m
                 if task_image:  # Update existing image
                     task_image.task_image = request.FILES["image"]
                     task_image.save()
@@ -452,6 +456,9 @@ def update_tasks_lists(request):
             # Process attachment upload if provided
             if "attachment" in request.FILES:
                 if task_attachment:  # Update existing attachment
+                    v_m = validate_media_files(request)
+                    if v_m:
+                        return v_m
                     task_attachment.task_attachment = request.FILES["attachment"]
                     task_attachment.save()
                     activity(request.user, f"Full_Name: {request.user.full_name}, updated task attachment>>{task_attachment.task_attachment.name} for task: {task_list.tasklist_title} in board: {task_list.task_card.board.title}")
@@ -867,7 +874,7 @@ def delete_comment(request):
     except Exception as e:
         return Response({"status": "error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-# Print, Export as PDF, Json, CSV functionality (TaskList based)
+# Print, Export as PDF, Json, CSV, Excel functionality (TaskList based)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def print_export(request):

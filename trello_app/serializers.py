@@ -7,14 +7,6 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['user_id', 'username', 'email', 'password', 'full_name', 'profile_image','created_at','updated_at']
         extra_kwargs = {'password': {'write_only': True}} # not show password in user detail.
 
-    # get generate full image path, ex."profile_image": "http://127.0.0.1:8000/media/profiles/20241206_piesUt9.jpg"
-    def get_profile_image(self, obj):
-        request = self.context.get('request')
-        if obj.profile_image and request:
-            host = request.get_host()
-            return f"http://{host}{obj.profile_image.url}"
-        return None
-
 ## User Detail Serializer
 class UserDetailSerializer(serializers.ModelSerializer):
     class Meta:
@@ -65,30 +57,8 @@ class TaskListSerializer(serializers.ModelSerializer):
     class Meta:
         model = TaskList
         fields = ['tasklist_id', 'task_card', 'tasklist_title', 'tasklist_description','priority','label_color','start_date','due_date',
-                  'created_at','created_by', 'updated_at','is_completed', 'updated_by','assigned_to','image','attachment','comments','checklist_progress','checklist_items']
-    
-    # function for get comment and his Full name only.
-    def get_comments(self, obj):
-        comments = obj.comments.all()
-        return [{"comment": comment.comment_text, "commented_by": comment.user.full_name if comment.user else "Unknown"} 
-                  for comment in comments]
-
-    # Function for calculate CgeckBoxes prohress by 100%
-    def get_checklist_progress(self, obj):
-        print("-------obj------", obj)
-        checklist_data = obj.checklist_items or {}
-        checklist_items = checklist_data.get("items", [])
-
-        total_items = len(checklist_items)
-        completed_items = sum(1 for item in checklist_items if item.get("done", False))
-        return (completed_items / total_items * 100) if total_items > 0 else 0
-
-    # Function fpr generate full image path, ex."image": "http://127.0.0.1:8000/media/profiles/20241206_piesUt9.jpg"
-    def get_image(self, obj):
-        request = self.context.get('request')
-        if obj.image and request:
-            host = request.get_host()
-            return f"http://{host}{obj.image.url}"
+                  'created_at','created_by', 'updated_at','is_completed', 'updated_by','assigned_to','image','attachment','comments',
+                  'checklist_progress','checklist_items']
 
 ## Coemment Serializer
 class CommentSerializer(serializers.ModelSerializer):
