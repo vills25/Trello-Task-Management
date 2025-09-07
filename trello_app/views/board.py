@@ -201,7 +201,7 @@ def view_board_members(request):
     except Exception as e:
         return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-#View for full board details
+# Get Full Board Data with Filter/Search functionality
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def get_my_board(request):
@@ -211,33 +211,23 @@ def get_my_board(request):
         if not board_id:
             return Response({"status": "fail", "message": "Please provide board_id"}, status=status.HTTP_400_BAD_REQUEST)
 
-        today = timezone.now().date()
-        tomorrow = today + timedelta(days=1)
-        this_week =  today - timedelta(days=today.weekday())
-        next_week = today + timedelta(weeks=1)
-        month = today + timedelta(days=30)
-
         if not board_id:
             boards = Board.objects.filter(members=request.user).order_by('-is_starred')
 
-            # Board filters
-            if request.data.get('board_title'):
-                boards = boards.filter(title__icontains=request.data['board_title'])
-
-            if request.data.get('board_description'):
-                boards = boards.filter(description__icontains=request.data['board_description'])
-
+            if request.data.get('visibility'):
+                boards = boards.filter(visibility__icontains = request.data.get('visibility'))
+                
             if request.data.get('no_members'):
                 boards = boards.filter(members__isnull=True)
             
-            boards = boards.distinct()
+            boards = boards.distinct()  #Remove Duplicate
             activity(request.user, f"{request.user.full_name} viewed boards")
 
             serializer = BoardSerializer(boards, many=True)
             return Response({"status":"success", "message": "Board filtered","Board data": serializer.data}, status=status.HTTP_200_OK)
 
         try:
-            board = Board.objects.get(board_id=board_id, members=request.user)
+            board = Board.objects.get(board_id=board_id, members=request.user) 
         except Board.DoesNotExist:
             return Response({"status":"fail", "message": "Board not found"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -259,7 +249,7 @@ def get_my_board(request):
         
         tasks = TaskCard.objects.filter(board=board).select_related('created_by', 'updated_by').order_by('-is_starred')
 
-        # TaskCard filters
+        # Get Board with TaskCard based filter
         if 'completed' in request.data:
             if request.data['completed']:
                 tasks = tasks.filter(is_completed='completed')
@@ -278,7 +268,7 @@ def get_my_board(request):
         if request.data.get('is_starred'):
             tasks = tasks.filter(is_starred=request.data['is_starred'])
 
-        # TaskList filters
+        # Get Board with TaskList based filter
         if request.data.get('task_list_title'):
             tasks = tasks.filter(task_lists__tasklist_title__icontains=request.data['task_list_title'])
 
@@ -294,6 +284,13 @@ def get_my_board(request):
         if request.data.get('label_color'):
             tasks = tasks.filter(task_lists__label_color=request.data['label_color'])
 
+        # DateTime based Filter
+        today = timezone.now().date()
+        tomorrow = today + timedelta(days=1)
+        this_week =  today - timedelta(days=today.weekday())
+        next_week = today + timedelta(weeks=1)
+        month = today + timedelta(days=30)
+
         if request.data.get('no_due'):
             tasks = tasks.filter(task_lists__due_date__isnull=True)
 
@@ -306,17 +303,17 @@ def get_my_board(request):
         if request.data.get('due_tomorrow'):
             tasks = tasks.filter(task_lists__due_date=tomorrow)
 
+        if request.data.get('due_on_this_week'):
+            tasks = tasks.filter(task_lists__due_date__range=[this_week, next_week])
+
         if request.data.get('due_next_week'):
             tasks = tasks.filter(task_lists__due_date__range=[next_week, month])
 
         if request.data.get('due_on_this_month'):
             tasks = tasks.filter(task_lists__due_date__month=today.month)
 
-        if request.data.get('due_on_this_week'):
-            tasks = tasks.filter(task_lists__due_date__range=[this_week, next_week])
-
-        url_path = request.META.get('HTTP_HOST', '')
-        tasks = tasks.distinct()
+        url_path = request.META.get('HTTP_HOST', '') # Get Host http://127.0.0.1:8000
+        tasks = tasks.distinct() # Remove duplicate
 
         # Get task from tasks through loop and add into "task_list_data = []"
         for task in tasks:
@@ -345,7 +342,7 @@ def get_my_board(request):
                     "checklist_items": tlist.checklist_items,
                 })
             
-            # Append "Tasks Cards" in to Board
+            # Append "TaskCard" along with TaskList in to Board
             board_data["Tasks Cards"].append({
                 "Task_id": task.task_id,
                 "Title": task.title,
@@ -378,10 +375,6 @@ def search_boards(request):
             queryset = queryset.filter(pk=data['board_id'])
         if data.get('title'):
             queryset = queryset.filter(title__icontains=data['title'])
-        if data.get('description'):
-            queryset = queryset.filter(description__icontains=data['description'])
-        if data.get('visibility'):
-            queryset = queryset.filter(visibility__icontains=data['visibility'])
     
         if not queryset.exists():
             return Response({"status":"fail", "message": "No matching Boards found"}, status=status.HTTP_404_NOT_FOUND)
