@@ -6,11 +6,12 @@ This is the Trello inspired Task-Management Backend-API Project using Python, Dj
 
 ```json
 {
-  "message": "User registered successfully.",
-  "user_id": 8,
-  "email": "rajat@gmail.com",
-  "username": "@rajat123",
-  "full_name": "Rajat Sharma"
+    "status": "success",
+    "message": "User registered successfully.",
+    "User Detail": {
+        "user_id": 34,
+        "full_name": "Jay Shah"
+    }
 }
 ```
 
@@ -18,14 +19,13 @@ This is the Trello inspired Task-Management Backend-API Project using Python, Dj
 
 ```json
 {
-  "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc1NDQ3MjUwOCwiaWF0IjoxNzU0Mzg2MTA4LCJqdGkiOiI4YTRhNjFjMTZiYWI0ZjY1ODYxMzkxMDhlZTIwZWE1NyIsInVzZXJfaWQiOiI4In0.DloC73awZLpo5JtEGX_s8KixHkI7B3JS1lzxB_KNJVE",
-  "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU0Mzg3MzA4LCJpYXQiOjE3NTQzODYxMDgsImp0aSI6IjY1ODVhNzEyYmZiMTQ2ZmU4N2IwMjlkYTRmYTNjZjFjIiwidXNlcl9pZCI6IjgifQ.Ts96NLMEvsiDxISXW5bIr8UR9ZTTJQQ7ErIVY4-IXsY",
-  "user": {
-    "user_id": 8,
-    "username": "@rajat123",
-    "email": "rajat@gmail.com",
-    "full_name": "Rajat Sharma"
-  }
+    "status": "Login Successfull",
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU3Mzk5MDAyLCJpYXQiOjE3NTczMTI2MDIsImp0aSI6ImNkZDkwNzNkYmMwZTQwZmM5YTAxMjhmM2Y1NDRlMWM1IiwidXNlcl9pZCI6IjMifQ.OWfJ68UEBzL9udDPFJn9JL_sFkGMCJA6NbUBXwT5g-4",
+    "user": {
+        "user_id": 3,
+        "username": "@arjun03",
+        "full_name": "Arjun Sharma"
+    }
 }
 ```
 
@@ -33,191 +33,279 @@ This is the Trello inspired Task-Management Backend-API Project using Python, Dj
 
 ```json
 {
-    "message": "Successfull",
-    "Taskboard data": {
+    "status": "success",
+    "message": "Board fetched",
+    "Board data": {
         "board_id": 3,
-        "title": "Website Redesign",
-        "description": "Complete UI/UX overhaul for main company website",
-        "visibility": "private",
-        "created_by": "Ryan Scott",
-        "created_at": "13-08-2025 07:30:26",
+        "title": "Marketing Team Board",
+        "description": "Q4 Marketing Strategy & Launch",
+        "visibility": "team",
+        "created_by": "Arjun Sharma",
+        "created_at": "26-08-2025 12:30:21",
         "updated_by": "Unknown",
-        "updated_at": "13-08-2025 07:31:43",
+        "updated_at": "26-08-2025 12:30:21",
         "members": [
             {
-                "user_id": 1,
-                "full_name": "asus"
-            },
-            {
                 "user_id": 3,
-                "full_name": "Vishal Sharma"
+                "full_name": "Arjun Sharma"
             },
             {
-                "user_id": 5,
-                "full_name": "Rahul Lokesh"
+                "user_id": 6,
+                "full_name": "Neha Patel"
             },
             {
-                "user_id": 22,
-                "full_name": "Ryan Scott"
+                "user_id": 7,
+                "full_name": "Rohan Gupta"
+            },
+            {
+                "user_id": 8,
+                "full_name": "Sneha Iyer"
             }
         ],
         "Tasks Cards": [
             {
-                "Task_id": 7,
+                "Task_id": 1,
                 "Title": "Q4 Marketing Launch",
-                "Description": "Execute holiday marketing campaign",
-                "Created_by": "Ryan Scott",
-                "Created_at": "13-08-2025 09:34:02",
-                "Updated_by": "None",
-                "Updated_at": "13-08-2025 09:34:02",
+                "Description": "Plan and execute holiday marketing campaign for Q4.",
+                "Created_by": "Arjun Sharma",
+                "Created_at": "26-08-2025 12:50:30",
+                "Updated_by": "Arjun Sharma",
+                "Updated_at": "26-08-2025 12:50:30",
                 "Task Lists": [
                     {
-                        "tasklist_id": 3,
-                        "tasklist_title": "Content Creation",
-                        "tasklist_description": "Write blog posts and social media copy",
-                        "priority": "low",
-                        "label_color": "green",
-                        "due_date": "15-08-2025",
-                        "comments": [
-                            {
-                                "comment": "This is a Comment",
-                                "commented_by": "Ryan Scott"
-                            },
-                            {
-                                "comment": "This is a Comment by Rahul",
-                                "commented_by": "Rahul Lokesh"
-                            },
-                            {
-                                "comment": "This is a Comment by asus",
-                                "commented_by": "asus"
-                            },
-                            {
-                                "comment": "This is a Comment by vishal",
-                                "commented_by": "Vishal Sharma"
-                            }
-                        ],
+                        "tasklist_id": 1,
+                        "tasklist_title": "Define campaign goals",
+                        "tasklist_description": "Set SMART goals for holiday launch.",
+                        "priority": "High",
+                        "label_color": "red",
+                        "due_date": "05-09-2025",
+                        "is_completed": false,
+                        "assigned_to": "Unassigned",
                         "Media_files": {
                             "Images": [
-                                {
-                                    "image_url": "http://127.0.0.1:8000/media/task_images/Aestro_wallpaper_1_Sg49EQs.jpg"
-                                }
+                                "http://127.0.0.1:8000task_images/20250713_OHR.YoungShark_EN-IN1362768509_UHD_bing.jpg"
                             ],
                             "Attachments": [
+                                "http://127.0.0.1:8000task_attachments/20250713_OHR.YoungShark_EN-IN1362768509_UHD_bing.jpg"
+                            ]
+                        },
+                        "comments": [],
+                        "checklist_progress": 50.0,
+                        "checklist_items": {
+                            "title": "Project Checklist",
+                            "items": [
                                 {
-                                    "attachment_url": "http://127.0.0.1:8000/media/task_attachment/lake_night_starry_sky_143961_2560x1440_UNp9sk9.jpg"
+                                    "name": "Setup Backend",
+                                    "done": true
+                                },
+                                {
+                                    "name": "Setup Frontend",
+                                    "done": true
+                                },
+                                {
+                                    "name": "Create Database",
+                                    "done": false
+                                },
+                                {
+                                    "name": "Deploy",
+                                    "done": false
                                 }
                             ]
                         }
                     },
                     {
-                        "tasklist_id": 4,
-                        "tasklist_title": "Ad Design",
-                        "tasklist_description": "Create Facebook/Google ads",
-                        "priority": "low",
-                        "label_color": "green",
-                        "due_date": "13-09-2025",
-                        "comments": [],
+                        "tasklist_id": 2,
+                        "tasklist_title": "Content planning",
+                        "tasklist_description": "Decide creatives, copies, and video ads",
+                        "priority": "Medium",
+                        "label_color": "blue",
+                        "due_date": "12-09-2025",
+                        "is_completed": false,
+                        "assigned_to": "Arjun Sharma",
                         "Media_files": {
                             "Images": [],
                             "Attachments": []
+                        },
+                        "comments": [],
+                        "checklist_progress": 0.0,
+                        "checklist_items": {
+                            "title": "Checklist",
+                            "items": [
+                                {
+                                    "name": "video edit",
+                                    "done": false
+                                }
+                            ]
                         }
+                    },
+                    {
+                        "tasklist_id": 17,
+                        "tasklist_title": "video edit",
+                        "tasklist_description": "",
+                        "priority": "low",
+                        "label_color": "green",
+                        "due_date": null,
+                        "is_completed": false,
+                        "assigned_to": "Unassigned",
+                        "Media_files": {
+                            "Images": [],
+                            "Attachments": []
+                        },
+                        "comments": [],
+                        "checklist_progress": 0,
+                        "checklist_items": {}
+                    },
+                    {
+                        "tasklist_id": 18,
+                        "tasklist_title": "Photo edit",
+                        "tasklist_description": "",
+                        "priority": "low",
+                        "label_color": "green",
+                        "due_date": null,
+                        "is_completed": false,
+                        "assigned_to": "Unassigned",
+                        "Media_files": {
+                            "Images": [],
+                            "Attachments": []
+                        },
+                        "comments": [],
+                        "checklist_progress": 0,
+                        "checklist_items": {}
                     }
                 ]
             },
             {
-                "Task_id": 8,
-                "Title": "Database Upgrade",
-                "Description": "Migrate from MySQL to PostgreSQL",
-                "Created_by": "Ryan Scott",
-                "Created_at": "13-08-2025 09:35:22",
-                "Updated_by": "None",
-                "Updated_at": "13-08-2025 09:35:22",
+                "Task_id": 2,
+                "Title": "Social Media Strategy",
+                "Description": "Create Instagram & LinkedIn content calendar for next 3 months.",
+                "Created_by": "Arjun Sharma",
+                "Created_at": "26-08-2025 12:50:50",
+                "Updated_by": "Arjun Sharma",
+                "Updated_at": "26-08-2025 12:50:50",
+                "Task Lists": [
+                    {
+                        "tasklist_id": 3,
+                        "tasklist_title": "Platform research",
+                        "tasklist_description": "Check audience activity on Insta, LinkedIn, Twitter.",
+                        "priority": "Medium",
+                        "label_color": "green",
+                        "due_date": "08-09-2025",
+                        "is_completed": false,
+                        "assigned_to": "Rahul Verma",
+                        "Media_files": {
+                            "Images": [],
+                            "Attachments": []
+                        },
+                        "comments": [],
+                        "checklist_progress": 0,
+                        "checklist_items": []
+                    },
+                    {
+                        "tasklist_id": 4,
+                        "tasklist_title": "Calendar creation",
+                        "tasklist_description": "Schedule daily posts for 3 months.",
+                        "priority": "High",
+                        "label_color": "yellow",
+                        "due_date": "20-09-2025",
+                        "is_completed": false,
+                        "assigned_to": "Priya Mehta",
+                        "Media_files": {
+                            "Images": [],
+                            "Attachments": []
+                        },
+                        "comments": [],
+                        "checklist_progress": 0,
+                        "checklist_items": []
+                    }
+                ]
+            },
+            {
+                "Task_id": 3,
+                "Title": "Ad Campaign Setup",
+                "Description": "Run Google Ads & Meta Ads targeting festive sales.",
+                "Created_by": "Arjun Sharma",
+                "Created_at": "26-08-2025 12:51:18",
+                "Updated_by": "Arjun Sharma",
+                "Updated_at": "26-08-2025 12:51:18",
                 "Task Lists": [
                     {
                         "tasklist_id": 5,
-                        "tasklist_title": "Backup Data",
-                        "tasklist_description": "Create full database backup",
-                        "priority": "low",
-                        "label_color": "green",
-                        "due_date": null,
-                        "comments": [],
+                        "tasklist_title": "Audience segmentation",
+                        "tasklist_description": "Define age, location, and interest-based targeting.",
+                        "priority": "High",
+                        "label_color": "orange",
+                        "due_date": "12-09-2025",
+                        "is_completed": false,
+                        "assigned_to": "Priya Mehta",
                         "Media_files": {
                             "Images": [],
                             "Attachments": []
-                        }
+                        },
+                        "comments": [],
+                        "checklist_progress": 0,
+                        "checklist_items": []
                     },
                     {
                         "tasklist_id": 6,
-                        "tasklist_title": "Schema Migration",
-                        "tasklist_description": "Convert tables to PostgreSQL format",
-                        "priority": "low",
-                        "label_color": "green",
-                        "due_date": null,
-                        "comments": [],
+                        "tasklist_title": "Ad creatives design",
+                        "tasklist_description": "Prepare banners and short videos for ads.",
+                        "priority": "Medium",
+                        "label_color": "blue",
+                        "due_date": "17-09-2025",
+                        "is_completed": false,
+                        "assigned_to": "Arjun Sharma",
                         "Media_files": {
                             "Images": [],
                             "Attachments": []
-                        }
+                        },
+                        "comments": [],
+                        "checklist_progress": 0,
+                        "checklist_items": []
                     }
                 ]
             },
             {
-                "Task_id": 9,
-                "Title": "Mobile App Feature Update",
-                "Description": "Implement new user profile features",
-                "Created_by": "Ryan Scott",
-                "Created_at": "13-08-2025 09:47:27",
-                "Updated_by": "Ryan Scott",
-                "Updated_at": "14-08-2025 12:50:27",
+                "Task_id": 4,
+                "Title": "Customer Feedback Survey",
+                "Description": "Prepare and send customer satisfaction survey post-purchase",
+                "Created_by": "Arjun Sharma",
+                "Created_at": "26-08-2025 12:51:39",
+                "Updated_by": "Arjun Sharma",
+                "Updated_at": "27-08-2025 10:34:58",
                 "Task Lists": [
                     {
                         "tasklist_id": 7,
-                        "tasklist_title": "Backend API",
-                        "tasklist_description": "Develop new endpoints for profile data",
-                        "priority": "low",
-                        "label_color": "green",
-                        "due_date": "15-08-2025",
-                        "comments": [],
+                        "tasklist_title": "Survey draft",
+                        "tasklist_description": "Prepare questions for product feedback.",
+                        "priority": "Low",
+                        "label_color": "purple",
+                        "due_date": "22-09-2025",
+                        "is_completed": false,
+                        "assigned_to": "Arjun Sharma",
                         "Media_files": {
                             "Images": [],
                             "Attachments": []
-                        }
+                        },
+                        "comments": [],
+                        "checklist_progress": 0,
+                        "checklist_items": []
                     },
                     {
                         "tasklist_id": 8,
-                        "tasklist_title": "UI Implementation",
-                        "tasklist_description": "Build profile screen in React Native",
-                        "priority": "low",
-                        "label_color": "green",
-                        "due_date": "12-09-2025",
-                        "comments": [
-                            {
-                                "comment": "This is a Comment",
-                                "commented_by": "Ryan Scott"
-                            }
-                        ],
+                        "tasklist_title": "Survey distribution",
+                        "tasklist_description": "Send via email & WhatsApp campaign.",
+                        "priority": "Medium",
+                        "label_color": "cyan",
+                        "due_date": "28-09-2025",
+                        "is_completed": false,
+                        "assigned_to": "Priya Mehta",
                         "Media_files": {
                             "Images": [],
                             "Attachments": []
-                        }
-                    },
-                    {
-                        "tasklist_id": 9,
-                        "tasklist_title": "Testing",
-                        "tasklist_description": "Conduct QA testing on new features",
-                        "priority": "low",
-                        "label_color": "green",
-                        "due_date": "14-08-2025",
-                        "comments": [
-                            {
-                                "comment": "This is a Comment",
-                                "commented_by": "Ryan Scott"
-                            }
-                        ],
-                        "Media_files": {
-                            "Images": [],
-                            "Attachments": []
-                        }
+                        },
+                        "comments": [],
+                        "checklist_progress": 0,
+                        "checklist_items": []
                     }
                 ]
             }
@@ -230,54 +318,139 @@ This is the Trello inspired Task-Management Backend-API Project using Python, Dj
 
 ```jason
 {
+    "status": "success",
+    "message": "TaskCard fetched",
     "Task card": [
         {
             "is_starred": false,
-            "task_id": 12,
-            "board": 5,
-            "title": "Fiscal Year Closing",
-            "description": "Complete annual financial reporting",
+            "task_id": 1,
+            "board": 3,
+            "title": "Q4 Marketing Launch",
+            "description": "Plan and execute holiday marketing campaign for Q4.",
             "is_completed": "pending",
-            "created_at": "13-08-2025 15:31:45",
-            "created_by": "ryan_scott",
-            "updated_at": "13-08-2025 15:31:45",
-            "assigned_to": {
-                "user_id": 22,
-                "full_name": "Ryan Scott"
-            },
+            "created_at": "26-08-2025 18:20:30",
+            "created_by": "@arjun03",
+            "updated_at": "26-08-2025 18:20:30",
+            "updated_by": "@arjun03",
             "task_lists": [
                 {
-                    "tasklist_id": 16,
-                    "task_card": 12,
-                    "tasklist_title": "Accounts Reconciliation",
-                    "tasklist_description": "Verify all transactions are recorded",
-                    "due_date": "2025-08-19",
-                    "created_at": "13-08-2025 15:31:45",
-                    "created_by": "ryan_scott",
+                    "tasklist_id": 1,
+                    "task_card": 1,
+                    "tasklist_title": "Define campaign goals",
+                    "tasklist_description": "Set SMART goals for holiday launch.",
+                    "priority": "High",
+                    "label_color": "red",
+                    "start_date": "2025-09-01",
+                    "due_date": "2025-09-05",
+                    "created_at": "27-08-2025 10:09:29",
+                    "created_by": "@arjun03",
+                    "updated_at": "08-09-2025 10:04:14",
                     "is_completed": false,
-                    "updated_at": "13-08-2025 15:31:45"
+                    "updated_by": "@arjun03",
+                    "assigned_to": null,
+                    "images": [
+                        "http://127.0.0.1:8000/media/task_images/20250713_OHR.YoungShark_EN-IN1362768509_UHD_bing.jpg"
+                    ],
+                    "attachments": [
+                        "http://127.0.0.1:8000/media/task_attachments/20250713_OHR.YoungShark_EN-IN1362768509_UHD_bing.jpg"
+                    ],
+                    "comments": [],
+                    "checklist_progress": 50.0,
+                    "checklist_items": {
+                        "title": "Project Checklist",
+                        "items": [
+                            {
+                                "name": "Setup Backend",
+                                "done": true
+                            },
+                            {
+                                "name": "Setup Frontend",
+                                "done": true
+                            },
+                            {
+                                "name": "Create Database",
+                                "done": false
+                            },
+                            {
+                                "name": "Deploy",
+                                "done": false
+                            }
+                        ]
+                    }
+                },
+                {
+                    "tasklist_id": 2,
+                    "task_card": 1,
+                    "tasklist_title": "Content planning",
+                    "tasklist_description": "Decide creatives, copies, and video ads",
+                    "priority": "Medium",
+                    "label_color": "blue",
+                    "start_date": "2025-09-06",
+                    "due_date": "2025-09-12",
+                    "created_at": "27-08-2025 10:14:16",
+                    "created_by": "@arjun03",
+                    "updated_at": "03-09-2025 17:13:39",
+                    "is_completed": false,
+                    "updated_by": null,
+                    "assigned_to": {
+                        "user_id": 3,
+                        "full_name": "Arjun Sharma"
+                    },
+                    "images": [],
+                    "attachments": [],
+                    "comments": [],
+                    "checklist_progress": 0.0,
+                    "checklist_items": {
+                        "title": "Checklist",
+                        "items": [
+                            {
+                                "name": "video edit",
+                                "done": false
+                            }
+                        ]
+                    }
                 },
                 {
                     "tasklist_id": 17,
-                    "task_card": 12,
-                    "tasklist_title": "Tax Preparation",
-                    "tasklist_description": "Compile documents for accountants",
-                    "due_date": "2025-08-20",
-                    "created_at": "13-08-2025 15:31:45",
-                    "created_by": "ryan_scott",
+                    "task_card": 1,
+                    "tasklist_title": "video edit",
+                    "tasklist_description": "",
+                    "priority": "low",
+                    "label_color": "green",
+                    "start_date": null,
+                    "due_date": null,
+                    "created_at": "02-09-2025 17:40:43",
+                    "created_by": "@arjun03",
+                    "updated_at": "02-09-2025 17:40:43",
                     "is_completed": false,
-                    "updated_at": "13-08-2025 15:31:45"
+                    "updated_by": null,
+                    "assigned_to": null,
+                    "images": [],
+                    "attachments": [],
+                    "comments": [],
+                    "checklist_progress": 0,
+                    "checklist_items": {}
                 },
                 {
                     "tasklist_id": 18,
-                    "task_card": 12,
-                    "tasklist_title": "Budget Planning",
-                    "tasklist_description": "Draft next year's department budgets",
-                    "due_date": "2025-12-15",
-                    "created_at": "13-08-2025 15:31:45",
-                    "created_by": "ryan_scott",
+                    "task_card": 1,
+                    "tasklist_title": "Photo edit",
+                    "tasklist_description": "",
+                    "priority": "low",
+                    "label_color": "green",
+                    "start_date": null,
+                    "due_date": null,
+                    "created_at": "02-09-2025 17:55:03",
+                    "created_by": "@arjun03",
+                    "updated_at": "02-09-2025 17:55:03",
                     "is_completed": false,
-                    "updated_at": "13-08-2025 15:31:45"
+                    "updated_by": null,
+                    "assigned_to": null,
+                    "images": [],
+                    "attachments": [],
+                    "comments": [],
+                    "checklist_progress": 0,
+                    "checklist_items": {}
                 }
             ]
         }
