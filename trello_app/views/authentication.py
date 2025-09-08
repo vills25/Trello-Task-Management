@@ -251,8 +251,12 @@ def show_activity(request):
         user = request.user
         get_admin_board = Board.objects.filter(created_by=user)
 
-         # Collect members of boards created by user
-        if get_admin_board.exists():
+        # If superuser, fetch all activities
+        if user.is_superuser:
+            activity_record = Activity.objects.all().order_by("-date_time")
+            
+        # Collect members of boards created by user 
+        elif get_admin_board.exists():
             get_members = []
 
             for board in get_admin_board:

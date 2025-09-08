@@ -42,7 +42,6 @@ urlpatterns = [
     path('star_task_card/', star_task_card),
     path('copy_task_card/', copy_task_card),
     path('move_task_card_to_other_board/', move_task_card_to_other_board),
-    # path('position/', position),
 
     # TaskList Urls
     path('create_task_lists/', create_task_lists),
@@ -55,4 +54,6 @@ urlpatterns = [
     path('edit_checkbox/', edit_checkbox),
     path('delete_checklist/', delete_checklist),
     path('convert_checkbox_to_tasklist/', convert_checkbox_to_tasklist),
+    path('superuser_all_user_activity/', superuser_all_user_activity),
+    
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

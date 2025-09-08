@@ -978,3 +978,34 @@ def print_export(request):
 
     except Exception as e:
         return Response({"status": "error", "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+# If superuser, export all users activity in excel formate
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def superuser_all_user_activity(request):
+
+    user = request.user
+
+    if user.is_superuser:
+        activity_record = Activity.objects.all().order_by("-date_time")
+        if not activity_record.exists():
+            return Response({"status": "fail", "message": "No activity records found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        file_name = "all_user_activities.xlsx"
+        file_path = os.path.join(settings.MEDIA_ROOT, "exports", file_name)
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
+        rows = []
+        for act in activity_record:
+            rows.append({
+                "User": act.user.full_name,
+                "Activity": act.Details,
+                "Date & Time": act.date_time.strftime("%Y-%m-%d %H:%M:%S"),
+            })
+
+        df = pd.DataFrame(rows)
+        df.to_excel(file_path, index=False)
+
+        return Response({"status": "success", "message": f"Excel file saved at {file_path}"}, status=status.HTTP_200_OK)
+    else:
+        return Response({"status":"fail", "message":"You are not permitted to perform this."}, status= status.HTTP_403_FORBIDDEN)
