@@ -321,8 +321,6 @@ def get_my_board(request):
             task_list_data = []
             
             for tasklist in tasks_lists:
-                print("========== BOARD IMAGES ===========", tasklist.images)
-                print("========== BOARD ATTACHMENT ===========", tasklist.attachments)
                 task_list_data.append({
                     "tasklist_id": tasklist.tasklist_id,
                     "tasklist_title": tasklist.tasklist_title,
@@ -333,8 +331,8 @@ def get_my_board(request):
                     "is_completed": tasklist.is_completed,
                     "assigned_to": tasklist.assigned_to.full_name if tasklist.assigned_to else "Unassigned",
                     "Media_files": {
-                        "Images": [f"http://{url_path}{img}" for img in tasklist.images] if tasklist.images else [],
-                        "Attachments": [f"http://{url_path}{att}" for att in tasklist.attachments] if tasklist.attachments else [],
+                        "Images": [f"http://{url_path}/{img}" for img in tasklist.images] if tasklist.images else [],
+                        "Attachments": [f"http://{url_path}/{att}" for att in tasklist.attachments] if tasklist.attachments else [],
                     },
                     "comments": TaskListSerializer().get_comments(tasklist),
                     "checklist_progress": TaskListSerializer().get_checklist_progress(tasklist),

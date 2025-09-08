@@ -83,10 +83,10 @@ This is the Trello inspired Task-Management Backend-API Project using Python, Dj
                         "assigned_to": "Unassigned",
                         "Media_files": {
                             "Images": [
-                                "http://127.0.0.1:8000task_images/20250713_OHR.YoungShark_EN-IN1362768509_UHD_bing.jpg"
+                                "http://127.0.0.1:8000/task_images/20250713_OHR.YoungShark_EN-IN1362768509_UHD_bing.jpg"
                             ],
                             "Attachments": [
-                                "http://127.0.0.1:8000task_attachments/20250713_OHR.YoungShark_EN-IN1362768509_UHD_bing.jpg"
+                                "http://127.0.0.1:8000/task_attachments/20250713_OHR.YoungShark_EN-IN1362768509_UHD_bing.jpg"
                             ]
                         },
                         "comments": [],
