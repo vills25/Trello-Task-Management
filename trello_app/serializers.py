@@ -26,38 +26,21 @@ class CommentDetailSerializer(serializers.ModelSerializer):
         model = Comment
         fields = ['user', 'comment_text', 'created_at']
 
-## Task-Image Serializer
-class TaskImageSerializer(serializers.ModelSerializer):
-    uploaded_by = serializers.CharField(source='created_by.username', read_only=True)
-    updated_by = serializers.CharField(source='updated_by.username', read_only=True)
-
-    class Meta:
-        model = TaskImage
-        fields = ['task_image_id', 'tasks_lists_id', 'task_image', 'uploaded_at', 'uploaded_by', 'updated_at', 'updated_by']
-
-## Task-Attachment Serializer
-class TaskAttachmentSerializer(serializers.ModelSerializer):
-    uploaded_by = serializers.CharField(source='created_by.username', read_only=True)
-    updated_by = serializers.CharField(source='updated_by.username', read_only=True)
-
-    class Meta:
-        model = TaskAttachment
-        fields = ['task_attachment_id', 'tasks_lists_id','task_attachment', 'uploaded_at', 'uploaded_by', 'updated_at', 'updated_by']
 
 ## Task-List Serializer
 class TaskListSerializer(serializers.ModelSerializer):
     assigned_to = UserDetailSerializer()
     created_by = serializers.CharField(source='created_by.username', read_only=True)
     updated_by = serializers.CharField()
-    image = TaskImageSerializer(many=True, read_only=True)
-    attachment = TaskAttachmentSerializer(many=True, read_only=True)
+    images = serializers.SerializerMethodField()
+    attachments = serializers.SerializerMethodField()
     comments = serializers.SerializerMethodField()
     checklist_progress = serializers.SerializerMethodField()
     
     class Meta:
         model = TaskList
         fields = ['tasklist_id', 'task_card', 'tasklist_title', 'tasklist_description','priority','label_color','start_date','due_date',
-                  'created_at','created_by', 'updated_at','is_completed', 'updated_by','assigned_to','image','attachment','comments',
+                  'created_at','created_by', 'updated_at','is_completed', 'updated_by','assigned_to','images','attachments','comments',
                   'checklist_progress','checklist_items']
         
     def get_comments(self, obj):
@@ -75,12 +58,17 @@ class TaskListSerializer(serializers.ModelSerializer):
         completed_items = sum(1 for item in checklist_items if item.get("done", False))
         return (completed_items / total_items * 100) if total_items > 0 else 0
 
-    # Function fpr generate full image path, ex."image": "http://127.0.0.1:8000/media/profiles/20241206_piesUt9.jpg"
-    def get_image(self, obj):
+    def get_images(self, obj):
         request = self.context.get('request')
-        if obj.image and request:
-            host = request.get_host()
-            return f"http://{host}{obj.image.url}"
+        if not request:
+            return obj.images
+        return [f"http://{request.get_host()}/media/{path}" for path in obj.images]
+
+    def get_attachments(self, obj):
+        request = self.context.get('request')
+        if not request:
+            return obj.attachments
+        return [f"http://{request.get_host()}/media/{path}" for path in obj.attachments]
 
 ## Coemment Serializer
 class CommentSerializer(serializers.ModelSerializer):

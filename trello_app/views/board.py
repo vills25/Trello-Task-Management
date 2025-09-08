@@ -318,30 +318,29 @@ def get_my_board(request):
         # Get task from tasks through loop and add into "task_list_data = []"
         for task in tasks:
             tasks_lists = TaskList.objects.filter(task_card=task)
-            
             task_list_data = []
-            for tlist in tasks_lists:
-                list_images = TaskImage.objects.filter(tasks_lists_id=tlist)
-                list_attachments = TaskAttachment.objects.filter(tasks_lists_id=tlist)
-
-                task_list_data.append({
-                    "tasklist_id": tlist.tasklist_id,
-                    "tasklist_title": tlist.tasklist_title,
-                    "tasklist_description": tlist.tasklist_description,
-                    "priority": tlist.priority,
-                    "label_color": tlist.label_color,
-                    "due_date": tlist.due_date.strftime("%d-%m-%Y") if tlist.due_date else None,
-                    "is_completed": tlist.is_completed,
-                    "assigned_to": tlist.assigned_to.full_name if tlist.assigned_to else "Unassigned",
-                    "Media_files": {
-                        "Images": [{"image_url": f'http://{url_path}{img.task_image.url}'} for img in list_images],
-                        "Attachments": [{"attachment_url": f'http://{url_path}{att.task_attachment.url}'} for att in list_attachments]
-                    },
-                    "comments": TaskListSerializer().get_comments(tlist),
-                    "checklist_progress": TaskListSerializer().get_checklist_progress(tlist),
-                    "checklist_items": tlist.checklist_items,
-                })
             
+            for tasklist in tasks_lists:
+                print("========== BOARD IMAGES ===========", tasklist.images)
+                print("========== BOARD ATTACHMENT ===========", tasklist.attachments)
+                task_list_data.append({
+                    "tasklist_id": tasklist.tasklist_id,
+                    "tasklist_title": tasklist.tasklist_title,
+                    "tasklist_description": tasklist.tasklist_description,
+                    "priority": tasklist.priority,
+                    "label_color": tasklist.label_color,
+                    "due_date": tasklist.due_date.strftime("%d-%m-%Y") if tasklist.due_date else None,
+                    "is_completed": tasklist.is_completed,
+                    "assigned_to": tasklist.assigned_to.full_name if tasklist.assigned_to else "Unassigned",
+                    "Media_files": {
+                        "Images": [f"http://{url_path}{img}" for img in tasklist.images] if tasklist.images else [],
+                        "Attachments": [f"http://{url_path}{att}" for att in tasklist.attachments] if tasklist.attachments else [],
+                    },
+                    "comments": TaskListSerializer().get_comments(tasklist),
+                    "checklist_progress": TaskListSerializer().get_checklist_progress(tasklist),
+                    "checklist_items": tasklist.checklist_items,
+                })
+
             # Append "TaskCard" along with TaskList in to Board
             board_data["Tasks Cards"].append({
                 "Task_id": task.task_id,

@@ -309,19 +309,10 @@ def copy_task_card(request):
                         assigned_to=tasklist.assigned_to,
                         created_by=request.user,
                         updated_by=tasklist.updated_by,
+                        task_image=tasklist.task_image,
+                        task_attachment=tasklist.task_attachment,
                 )
-            # this will copy all images from the original task list
-            for image in new_tasklist.image.all():
-                TaskImage.objects.create(
-                    tasks_lists_id=new_tasklist,
-                    task_image=image.task_image
-                )
-            # this will copy all attachments from the original task list
-            for attachment in new_tasklist.attachment.all():
-                TaskAttachment.objects.create(
-                    tasks_lists_id=new_tasklist,
-                    task_attachment=attachment.task_attachment
-                )
+
             # this will copy all comments from the original task list
             for comment in new_tasklist.comments.all():
                 Comment.objects.create(
@@ -387,13 +378,19 @@ def create_task_lists(request):
                 created_by = request.user
             )
 
-            # save any uploaded image
+            # Save uploaded images
+            images_list = []
             for img in request.FILES.getlist("images"):
-                TaskImage.objects.create(tasks_lists_id=task_list, task_image=img)
+                file_path = f'task_images/{img.name}'
+                images_list.append(file_path)
+            task_list.images = images_list
 
-            # save any uploaded attachments
+            # Save uploaded attachments
+            attach_list = []
             for file in request.FILES.getlist("attachments"):
-                TaskAttachment.objects.create(tasks_lists_id=task_list, task_attachment=file)
+                file_path = f'task_attachments/{file.name}'
+                attach_list.append(file_path)
+            task_list.attachments = attach_list
 
             activity(request.user, f"{request.user.full_name} created task list: {task_list.tasklist_title} in task: {task.title}")
             serializers = TaskListSerializer(task_list, context={'request': request})
@@ -406,31 +403,20 @@ def create_task_lists(request):
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 def update_tasks_lists(request):
-
     task_list_id = request.data.get("task_list_id")
     if not task_list_id:
-        return Response({"status":"fail", "message":"Please Enter task_list_id"}, status= status.HTTP_400_BAD_REQUEST)
+        return Response({"status":"fail", "message":"Please Enter task_list_id"}, status=status.HTTP_400_BAD_REQUEST)
 
-    try:    # Get the task list to update (must be created by the user)
-       task_list = TaskList.objects.get(tasklist_id=task_list_id, created_by=request.user)
+    try:
+        task_list = TaskList.objects.get(tasklist_id=task_list_id, created_by=request.user)
     except TaskList.DoesNotExist:
         return Response({"status":"fail", "message": "Task list not found"}, status=status.HTTP_404_NOT_FOUND)
 
-    # Check if user is the creator of the task list (authorization)
     if request.user != task_list.created_by:
         return Response({"status":"fail", "message": "You cannot edit this task"}, status=status.HTTP_403_FORBIDDEN)
-    
-    try:    # Get the first image and attachment associated with the task list
-        task_image = TaskImage.objects.filter(tasks_lists_id=task_list).first()
-        task_attachment = TaskAttachment.objects.filter(tasks_lists_id=task_list).first()
-
-    except (TaskImage.DoesNotExist, TaskAttachment.DoesNotExist):
-        return Response({"status":"fail", "message": "Task image or attachment not found"}, status=status.HTTP_404_NOT_FOUND)
 
     try:
-        
-        with transaction.atomic(): 
-            # Update task list fields with new values or keep existing ones   
+        with transaction.atomic():
             task_list.tasklist_title = request.data.get("tasklist_title", task_list.tasklist_title)
             task_list.tasklist_description = request.data.get("tasklist_description", task_list.tasklist_description)
             task_list.priority = request.data.get("priority", task_list.priority)
@@ -438,41 +424,22 @@ def update_tasks_lists(request):
             task_list.start_date = request.data.get("start_date", task_list.start_date)
             task_list.due_date = request.data.get("due_date", task_list.due_date)
             task_list.is_completed = request.data.get("is_completed", task_list.is_completed)
-            task_list.assigned_to = request.data.get("assigned_to", task_list.assigned_to)
 
-            # Process image upload if provided
-            if "image" in request.FILES:
-                v_m = validate_media_files(request)
-                if v_m:
-                    return v_m
-                if task_image:  # Update existing image
-                    task_image.task_image = request.FILES["image"]
-                    task_image.save()
-                    activity(request.user, f"Full_Name: {request.user.full_name}, updated task image>>{task_image.task_image.name} in task: {task_list.tasklist_title} in board: {task_list.task_card.board.title}")
-                else:   # Create new image
-                    TaskImage.objects.create(tasks_lists_id=task_list, task_image=request.FILES["image"])
-                    activity(request.user, f"Full_Name: {request.user.full_name}, Uploaded image>>{request.FILES['image'].name} for task: {task_list.tasklist_title} in board: {task_list.task_card.board.title}")
+            # If new files uploaded -->> append to existing JSON list
+            for img in request.FILES.getlist("image"):
+                file_path = f'task_images/{img.name}'
+                task_list.images.append(file_path)
 
-            # Process attachment upload if provided
-            if "attachment" in request.FILES:
-                if task_attachment:  # Update existing attachment
-                    v_m = validate_media_files(request)
-                    if v_m:
-                        return v_m
-                    task_attachment.task_attachment = request.FILES["attachment"]
-                    task_attachment.save()
-                    activity(request.user, f"Full_Name: {request.user.full_name}, updated task attachment>>{task_attachment.task_attachment.name} for task: {task_list.tasklist_title} in board: {task_list.task_card.board.title}")
-                else:   # Create new attachment
-                    TaskAttachment.objects.create(tasks_lists_id=task_list, task_attachment=request.FILES["attachment"])
-                    activity(request.user, f"Full_Name: {request.user.full_name}, Attached Files>>{request.FILES['attachment'].name} for task: {task_list.tasklist_title} in board: {task_list.task_card.board.title}")
+            for file in request.FILES.getlist("attachment"):
+                file_path = f'task_attachments/{file.name}'
+                task_list.attachments.append(file_path)
 
-        # Save the updated task list
-        task_list.save()
-        activity(request.user, f"{request.user.full_name} updated task list: {task_list.tasklist_title} in task: {task_list.task_card.title}")
+            task_list.updated_by = request.user
+            task_list.save()
 
-        serializers = TaskListSerializer(task_list, context={'request': request})
-        # serializers = TaskListSerializer(task_list)
-        return Response({"status":"success", "message": "Task list updated", "Task List Data": serializers.data}, status=status.HTTP_200_OK)
+            activity(request.user, f"{request.user.full_name} updated task list: {task_list.tasklist_title}")
+            serializers = TaskListSerializer(task_list, context={'request': request})
+            return Response({"status":"success", "message": "Task list updated", "Task List Data": serializers.data}, status=status.HTTP_200_OK)
 
     except Exception as e:
         return Response({"status":"error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -529,22 +496,11 @@ def copy_task_list(request):
                         due_date  =  get_task_list.due_date,
                         is_completed  =  get_task_list.is_completed,
                         assigned_to  =  get_task_list.assigned_to,
-                        created_by  =  request.user
+                        created_by  =  request.user,
+                        images=get_task_list.images,
+                        attachments=get_task_list.attachments,
                     ) 
-            # this will copy all images from the original task list
-            for image in get_task_list.image.all():
-                TaskImage.objects.create(
-                    tasks_lists_id=copy_task_list,
-                    task_image=image.task_image,
-                    uploaded_by=request.user
-                )
-            # this will copy all attachments from the original task list
-            for attachment in get_task_list.attachment.all():
-                TaskAttachment.objects.create(
-                    tasks_lists_id=copy_task_list,
-                    task_attachment=attachment.task_attachment,
-                    uploaded_by=request.user
-                )
+
             # this will copy all comments from the original task list
             for comment in get_task_list.comments.all():
                 Comment.objects.create(

@@ -12,7 +12,6 @@ class User(AbstractUser):
     is_superadmin = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
     REQUIRED_FIELDS = ['email', 'full_name'] 
 
     def __str__(self):
@@ -79,29 +78,11 @@ class TaskList(models.Model):
     updated_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name="list_updated_by")
     assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_tasks')
     checklist_items = models.JSONField(default= dict, blank=True)
+    images = models.JSONField(default=list, blank=True)  
+    attachments = models.JSONField(default=list, blank=True)
 
     def __str__(self):
         return self.tasklist_title
-
-## Model for manage Images  (Foreignkey used -->> TaskList, User)
-class TaskImage(models.Model):
-    task_image_id = models.AutoField(primary_key=True)
-    tasks_lists_id = models.ForeignKey(TaskList, on_delete=models.CASCADE, related_name="image")
-    task_image = models.ImageField(upload_to='task_images/')
-    uploaded_at = models.DateTimeField(auto_now_add=True)
-    uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name='image_uploaded_by')
-    updated_at = models.DateTimeField(auto_now=True)
-    updated_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name='image_updated_by')
-
-## Model for manage Attachments files  (Foreignkey used -->> TaskList, User)
-class TaskAttachment(models.Model):
-    task_attachment_id = models.AutoField(primary_key=True)
-    tasks_lists_id = models.ForeignKey(TaskList, on_delete=models.CASCADE, related_name="attachment")
-    task_attachment = models.FileField(upload_to='task_attachment/')
-    uploaded_at = models.DateTimeField(auto_now_add=True)
-    uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name='attachment_uploaded_by')
-    updated_at = models.DateTimeField(auto_now=True)
-    updated_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name='attachment_updated_by')
 
 
 ## Model for activity log (Foreignkey used -->> User)
